@@ -1,0 +1,2730 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <title>Quản Lý Đơn - GPT Tuấn Nguyễn</title>
+  
+  <!-- Thêm Font chữ hiện đại -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237c3aed'/%3E%3Cstop offset='100%25' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='36' y='36' width='440' height='440' rx='120' fill='url(%23g)'/%3E%3Ctext x='50%25' y='54%25' font-family='system-ui, sans-serif' font-size='220' font-weight='900' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle' letter-spacing='-5'%3ETN%3C/text%3E%3C/svg%3E" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    /* ========================================= */
+    /* BIẾN MÀU SẮC & GIAO DIỆN CAO CẤP          */
+    /* ========================================= */
+    :root {
+      --bg-main: #020617; /* Đen xanh rất đậm */
+      --bg-surface: #0f172a; 
+      --bg-card: rgba(30, 41, 59, 0.6); 
+      --line: rgba(255, 255, 255, 0.08);
+      --primary: #7c3aed;
+      --primary2: #a855f7;
+      --primary-grad: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background-color: var(--bg-main);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* THANH CUỘN (SCROLLBAR) */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
+
+    /* HEADER NỔI BẬT */
+    header {
+      padding: 16px 24px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    /* ĐÃ SỬA: Max-width 100% để lấp đầy toàn bộ màn hình */
+    .container {
+      padding: 20px 24px;
+      width: 100%;
+      max-width: 100%; 
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    /* CARD DASHBOARD (KPIs) */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+      background: var(--primary-grad);
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+    .card:hover::before { opacity: 1; }
+
+    .card span {
+      font-size: 14px;
+      font-weight: 800;
+      display: block;
+      margin-top: 8px;
+      color: #fff;
+    }
+
+    /* INPUTS & TOOLBARS */
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input, select, textarea {
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+    
+    input::placeholder, textarea::placeholder { color: #64748b; }
+    textarea { resize: vertical; min-height: 44px; }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    button {
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary-grad);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: inherit;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+      transition: all 0.2s ease;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    button:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.5); 
+    }
+    button:active { transform: translateY(1px); }
+
+    /* ĐÃ SỬA: FORM NHẬP LIỆU (Đổi sang Flexbox để lấp đầy khoảng trống) */
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.6));
+      padding: 24px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      box-shadow: inset 0 2px 10px rgba(255,255,255,0.02);
+    }
+    .form-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .form-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 150px;
+      position: relative;
+    }
+    .form-col.wide { flex: 2; min-width: 250px; }
+
+    /* TABLE HIỆN ĐẠI */
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 4px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(12px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1000px;
+    }
+
+    th {
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    th:first-child { border-top-left-radius: 20px; }
+    th:last-child { border-top-right-radius: 20px; text-align: center; }
+
+    td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      background: transparent;
+      font-size: 14px;
+      vertical-align: middle;
+      line-height: 1.5;
+    }
+
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(124, 58, 237, 0.06) !important;
+      transform: scale(1.002);
+    }
+    
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:last-child td:first-child { border-bottom-left-radius: 20px; }
+    tbody tr:last-child td:last-child { border-bottom-right-radius: 20px; }
+
+    /* STATUS BADGES TRONG TABLE */
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-block;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .st-new { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+.st-doing { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+.st-done { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.st-delivered { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+
+    /* NÚT ACTION TRONG TABLE */
+    .action-cell { text-align: center; white-space: nowrap; }
+    .action-cell button {
+      padding: 8px;
+      margin: 0 4px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: none;
+      font-size: 14px;
+    }
+    .action-cell button:hover { background: rgba(255, 255, 255, 0.15); transform: scale(1.1); }
+    .action-cell button.btn-zalo:hover { background: #0068ff; }
+    .action-cell button.btn-del:hover { background: #ef4444; }
+
+    /* CHIP TABS MỀM MẠI */
+    .chip-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+    .chip-scroll::-webkit-scrollbar { display: none }
+    .chip { 
+      display: flex; align-items: center; gap: 8px; white-space: nowrap; 
+      padding: 10px 18px; border-radius: 999px; 
+      background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.05); 
+      cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      color: var(--muted); font-weight: 600; box-shadow: none;
+    }
+    .chip:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    .chip.active { 
+      background: var(--primary-grad); 
+      color: white; border-color: transparent;
+      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4); 
+    }
+    .badge { background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800;}
+    .danger { background: #ef4444; color: white; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800;}
+    .rate { font-size: 11px; color: #ffffff; }
+    .rate.low { color: #f87171; font-weight: 700; }
+    .rate.mid { color: #fbbf24; font-weight: 700; }
+    .rate.high { color: #4ade80; font-weight: 700; }
+
+    /* KANBAN MƯỢT MÀ */
+    .kanban-view {
+      display: none;
+      grid-template-columns: repeat(4, minmax(300px, 1fr));
+      gap: 16px;
+      overflow-x: auto;
+      min-height: 60vh;
+      padding-bottom: 16px; 
+    }
+    .k-col {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 20px;
+      padding: 14px;
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .k-col-header {
+      font-weight: 800; text-align: center; padding: 12px; border-radius: 14px;
+      background: rgba(0,0,0,0.2); letter-spacing: 0.5px;
+    }
+    .k-card {
+      background: rgba(30, 41, 59, 0.9); padding: 16px; border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05); cursor: grab; position: relative;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: all 0.2s ease;
+    }
+    .k-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
+    .k-card:active { cursor: grabbing; border-color: var(--primary); transform: scale(1.02) translateY(-4px); box-shadow: 0 10px 25px rgba(124,58,237,0.3); }
+    .k-card .k-title { font-weight: 800; font-size: 15px; color: #fff; margin-bottom: 6px;}
+    .k-card .k-info { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .k-card .k-due { font-size: 11px; background: rgba(0,0,0,0.3); display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 6px; margin-top: 8px; font-weight: 600;}
+
+    /* LỊCH LÀM VIỆC NỔI BẬT */
+    .calendar-view {
+      display: none; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--line);
+      border-radius: 24px; padding: 24px; overflow-x: auto; backdrop-filter: blur(10px);
+    }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; min-width: 700px; }
+    .cal-header h2 { font-weight: 800; color: #fff; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); gap: 8px; min-width: 700px; }
+    .cal-day-name { text-align: center; font-weight: 800; padding: 12px 0; color: var(--muted); background: rgba(0,0,0,0.2); border-radius: 12px; }
+    .cal-cell { 
+      min-height: 130px; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.03); 
+      padding: 8px; border-radius: 16px; display: flex; flex-direction: column; gap: 6px; transition: 0.2s;
+    }
+    .cal-cell:hover { background: rgba(30, 41, 59, 0.8); }
+    .cal-cell .date-num { font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 6px; padding: 4px; }
+    .cal-cell.today { border-color: var(--primary); background: rgba(124, 58, 237, 0.1); box-shadow: inset 0 0 20px rgba(124, 58, 237, 0.1); }
+    .cal-cell.today .date-num { color: #fff; background: var(--primary); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+    .cal-event {
+      font-size: 12px; font-weight: 600; padding: 6px 8px; border-radius: 8px; background: rgba(51, 65, 85, 0.8); color: #fff;
+      cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: 0.2s;
+    }
+    .cal-event:hover { transform: translateX(2px); filter: brightness(1.2); }
+    .cal-event.done { background: rgba(22, 163, 74, 0.3); color: #86efac; text-decoration: line-through; border: 1px solid rgba(22, 163, 74, 0.5);}
+    .cal-event.soon { background: rgba(234, 88, 12, 0.8); }
+    .cal-event.overdue { background: rgba(220, 38, 38, 0.8); }
+
+    /* VIEW TOGGLER */
+    .view-toggler { display: flex; gap: 8px; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; display: inline-flex; }
+    .view-toggler button { background: transparent; border: none; color: var(--muted); box-shadow: none; padding: 10px 16px; border-radius: 12px; }
+    .view-toggler button:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .view-toggler button.active { background: var(--bg-card); color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
+
+    /* PAGINATION */
+    .pagination { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
+    .pageBtn { background: rgba(30, 41, 59, 0.8); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-weight: 700; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;}
+    .pageBtn:hover { background: rgba(255,255,255,0.1); }
+    .pageBtn.active { background: var(--primary-grad); color: #fff; border-color: transparent; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
+
+    /* MODAL CHUNG TỐI ƯU CAO CẤP */
+    .modal {
+      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center; z-index: 99999;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal-content {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 24px; padding: 24px;
+      width: 760px; max-width: 95%; max-height: 90vh; overflow-y: auto; overflow-x: hidden;
+      display: flex; flex-direction: column; gap: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalSlideUp { from { transform: translateY(30px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+    .modal-content::-webkit-scrollbar { width: 6px; }
+    .modal-title { font-weight: 800; font-size: 18px; color: #fff; }
+    label { font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; margin-top: 8px;}
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--line); padding-top: 20px; margin-top: 10px;}
+
+    /* TOAST MƯỢT MÀ */
+    .toast {
+      position: fixed; top: 24px; right: 24px; min-width: 300px; max-width: 400px;
+      padding: 16px 20px; border-radius: 20px; display: none; z-index: 9999999; color: #fff;
+      font-weight: 600; overflow: hidden; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: toastIn .4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast::after { content: ""; position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; animation: progress 2.6s linear forwards; }
+    .toast.success::after { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .toast.error::after { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .toast.warning::after { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .toast.info::after { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .toast-wrap { display: flex; align-items: center; gap: 12px; font-size: 14px;}
+    .toast-icon { font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));}
+    @keyframes toastIn { from { opacity: 0; transform: translateX(40px) scale(.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+    @keyframes toastOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+    @keyframes progress { from { width: 100% } to { width: 0% } }
+
+    /* FIREBASE STATUS & LOGOUT */
+    #firebaseStatus { position: fixed; bottom: 20px; left: 20px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); padding: 10px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 10px; z-index:9000; box-shadow: 0 10px 20px rgba(0,0,0,0.3);}
+    .logout-circle { position: fixed; top: 12px; left: 24px; width: 44px; height: 44px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 20px; z-index: 99999; border: 1px solid rgba(239, 68, 68, 0.3); transition: all 0.3s ease; cursor: pointer; backdrop-filter: blur(10px); box-shadow: none; }
+    .logout-circle:hover { transform: scale(1.1) rotate(10deg); background: #ef4444; color: #fff; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4); }
+
+    /* MÀN HÌNH KHÓA KIỂU MỚI (CĂN GIỮA TUYỆT ĐỐI) */
+    #pwModal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.9); z-index: 999999; transition: opacity 0.25s ease; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);}
+    .lock-container { 
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); 
+      padding: 40px; border-radius: 32px; text-align: center; 
+      border: 1px solid rgba(124, 58, 237, 0.3); 
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 2px 20px rgba(255,255,255,0.05); 
+      max-width: 420px; width: 90%; position: relative; overflow: hidden;
+      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+      display: flex; flex-direction: column; align-items: center; justify-content: center; /* Đảm bảo căn giữa */
+    }
+    .lock-container::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 60%); z-index: 0; pointer-events: none; }
+    .lock-icon { font-size: 52px; margin-bottom: 20px; display: inline-flex; background: rgba(0,0,0,0.3); padding: 18px; border-radius: 50%; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); position: relative; z-index: 1; border: 1px solid rgba(255,255,255,0.05);}
+    .lock-container h2 { margin: 0 0 8px; font-size: 28px; font-weight: 800; color: #fff; position: relative; z-index: 1;}
+    .lock-container p { color: var(--muted); font-size: 15px; margin-bottom: 30px; position: relative; z-index: 1; font-weight: 500;}
+    .pin-field { 
+      font-size: 36px; padding: 16px; width: 100%; max-width: 220px; text-align: center; 
+      border-radius: 20px; border: 2px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); 
+      letter-spacing: 18px; outline: none; transition: 0.3s; color: #fff; font-family: monospace; position: relative; z-index: 1;
+      margin: 0 auto; display: block;
+    }
+    .pin-field:focus { border-color: var(--primary2); box-shadow: 0 0 0 6px rgba(124, 58, 237, 0.2); background: rgba(15, 23, 42, 0.8); }
+    .pin-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; border-color: #ef4444 !important; background: rgba(239, 68, 68, 0.1) !important;}
+    @keyframes slideUp { from { transform: translateY(40px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    @keyframes shake { 10%, 90% { transform: translateX(-3px); } 20%, 80% { transform: translateX(5px); } 30%, 50%, 70% { transform: translateX(-8px); } 40%, 60% { transform: translateX(8px); } }
+
+    /* IMAGE UPLOAD UI NÂNG CẤP */
+    .img-item { position: relative; width: 100%; height: auto; display: flex; justify-content: center; border-radius: 16px; overflow: hidden; background: #000; box-shadow: 0 4px 15px rgba(0,0,0,0.2);}
+    .img-item img { width: 100%; max-height: 400px; object-fit: contain; } /* Ảnh Modal upload */
+    .img-remove { position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(239, 68, 68, 0.9); width: 30px; height: 30px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; opacity: 0.8;}
+    .img-remove:hover { background: #ef4444; opacity: 1; transform: scale(1.1); }
+    .img-progress { position: absolute; bottom: 0; left: 0; height: 6px; background: linear-gradient(90deg, #22c55e, #4ade80); width: 0%; transition: 0.2s; box-shadow: 0 -2px 10px rgba(34, 197, 94, 0.5);}
+    
+    /* GIAO DIỆN KHÁCH HÀNG NÂNG CẤP */
+    .customer-card-glass {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.6));
+      border: 1px solid var(--line); border-radius: 20px; padding: 20px;
+      backdrop-filter: blur(12px); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1); transition: 0.3s ease;
+    }
+    .customer-card-glass:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.2); border-color: rgba(124, 58, 237, 0.3);}
+
+    /* TRẠNG THÁI HIỂN THỊ DÒNG QUÁ HẠN / TỚI HẠN BẰNG BORDER LEFT ÁNH SÁNG */
+    tr.overdue td:first-child { border-left: 5px solid #ef4444 !important; background: rgba(239, 68, 68, 0.05); } /* Quá hạn - Đỏ */
+tr.soon td:first-child { border-left: 5px solid #f97316 !important; } /* Sắp tới hạn - Cam */
+tr.doing td:first-child { border-left: 5px solid #fbbf24 !important; } /* Đang làm - Vàng */
+tr.done td:first-child { border-left: 5px solid #3b82f6 !important; } /* Đã xong - Xanh dương */
+tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đã giao - Xanh lá */
+
+    /* ========================================= */
+    /* CÁC TÍNH NĂNG UX/UI NÂNG CAO & ĐÃ FIX MOBILE */
+    /* ========================================= */
+    
+    /* 3. MÃ MÀU COLOR-CODING CHO KANBAN */
+    .k-card[data-product="Tranh Cát"] { border-left: 4px solid #ec4899; }
+    .k-card[data-product="Chữ Đám Cưới"] { border-left: 4px solid #3b82f6; }
+    .k-card[data-product="Bạt"] { border-left: 4px solid #f59e0b; }
+    .k-card[data-product="Khác"] { border-left: 4px solid #94a3b8; }
+
+    /* 4. RÚT GỌN TEXT DÀI TRONG BẢNG */
+    .truncate-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 2; 
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 280px; 
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* 5. NÚT ZALO NỔI (FAB) MƯỢT MÀ */
+    .zalo-fab {
+      position: fixed; bottom: 24px; right: 24px; padding: 14px 24px; border-radius: 999px;
+      background: linear-gradient(135deg, #0068ff, #005ce6); color: white !important; text-decoration: none;
+      font-weight: 800; z-index: 99999; box-shadow: 0 10px 25px rgba(0, 104, 255, 0.4);
+      display: flex; align-items: center; gap: 8px; transition: 0.3s;
+    }
+    .zalo-fab:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 35px rgba(0, 104, 255, 0.6); }
+
+    /* 6. HIỆU ỨNG SKELETON LOADING */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .sk-text { height: 40px; margin-bottom: 12px; width: 100%; border-radius: 12px; }
+
+    /* CSS FIX RESPONSIVE MOBILE */
+    @media screen and (max-width: 768px) {
+      header { padding: 12px 16px; }
+      .container { padding: 12px; max-width: 100%; overflow-x: hidden; }
+      .dashboard { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .card { padding: 16px 12px; } .card span { font-size: 20px; }
+      .toolbar { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px; }
+      .toolbar > div, .toolbar select, .toolbar button { width: 100%; margin: 0; }
+      .chip-scroll { flex-direction: row; flex-wrap: nowrap; padding-bottom: 12px; overflow-x: auto; scroll-behavior: smooth; }
+      .form { padding: 16px; border-radius: 16px; gap: 12px; }
+      .form-row { flex-direction: column; gap: 16px; margin-top: 0 !important; }
+      .form-col, .form-col.wide { width: 100%; min-width: unset; flex: none; }
+      .form-row > div > div { flex-direction: column; }
+      .form-row input, .form-row select, .form-row textarea { width: 100% !important; }
+      .form-row button { width: 100%; margin-top: 4px; }
+      .table-wrap { border-radius: 16px; padding: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 800px; }
+      th, td { padding: 12px 8px; font-size: 13px; }
+      th:nth-child(2), td:nth-child(2) { position: sticky; left: 0; background: var(--bg-surface); z-index: 10; box-shadow: 2px 0 5px rgba(0,0,0,0.2); }
+      
+      /* Fix Kanban chèn lên nhau */
+      .kanban-view { grid-template-columns: repeat(4, 85vw) !important; scroll-snap-type: x mandatory; padding-bottom: 20px; }
+      .k-col { scroll-snap-align: center; }
+      
+      .calendar-view { padding: 12px; border-radius: 16px; }
+      .cal-header { min-width: 100%; flex-direction: column; gap: 12px; }
+      .cal-header h2 { font-size: 18px; }
+      .cal-grid { min-width: 600px; }
+      .modal-content { width: calc(100% - 24px); padding: 16px; border-radius: 16px; max-height: 85vh; }
+      .grid2 { grid-template-columns: 1fr; gap: 16px; }
+      .lock-container { width: 90%; max-width: 320px; padding: 24px; border-radius: 24px; }
+      .pin-field { font-size: 28px; max-width: 180px; letter-spacing: 12px; }
+      .logout-circle { top: 12px; left: 12px; width: 40px; height: 40px; font-size: 16px; }
+      .toast { min-width: auto; width: 90%; right: 5%; left: 5%; top: 16px; }
+      #firebaseStatus { bottom: 10px; left: 10px; font-size: 11px; padding: 6px 12px; }
+      .zalo-fab { bottom: 16px; right: 16px; padding: 12px 18px; font-size: 14px;}
+      .truncate-text { max-width: 200px; }
+    }
+  /* LIGHTBOX CSS */
+.lightbox {
+  position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95);
+  backdrop-filter: blur(10px); z-index: 10000000;
+  display: none; align-items: center; justify-content: center;
+  cursor: zoom-out; animation: fadeIn 0.3s ease;
+}
+.lightbox img {
+  max-width: 90%; max-height: 90vh;
+  border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  cursor: default; transition: transform 0.3s ease;
+}
+.lightbox-close {
+  position: absolute; top: 24px; right: 24px;
+  background: rgba(255,255,255,0.1); color: white;
+  border: none; width: 50px; height: 50px; border-radius: 50%;
+  font-size: 24px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: 0.2s;
+}
+.lightbox-close:hover { background: #ef4444; transform: scale(1.1); }  
+/* CONTEXT MENU CSS */
+.context-menu {
+  position: fixed;
+  z-index: 10000001;
+  width: 200px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: none;
+  flex-direction: column;
+  padding: 6px;
+  animation: modalSlideUp 0.2s ease;
+}
+
+.context-menu-item {
+  padding: 10px 14px;
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+.context-menu-item:hover {
+  background: rgba(124, 58, 237, 0.2);
+  color: #c084fc;
+}
+
+.context-menu-item.delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.context-menu-sep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 4px 0;
+}
+/* Chỉ ẩn cột Thao tác khi màn hình lớn hơn 768px (Máy tính) */
+@media screen and (min-width: 769px) {
+    table th:last-child, .action-cell {
+        display: none !important;
+    }
+}
+  </style>
+</head>
+
+<body>
+  <!-- HEADER NÂNG CẤP -->
+  <header id="mainHeader">
+    <div style="text-align:center; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;" onclick="go('/')" title="Về trang chủ">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="height: 28px; width: 28px; filter: drop-shadow(0 4px 6px rgba(124,58,237,0.4));">
+        <defs>
+          <linearGradient id="hl-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#7c3aed" />
+            <stop offset="100%" stop-color="#a855f7" />
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="140" fill="url(#hl-grad)"/>
+        <text x="50%" y="54%" font-family="system-ui, sans-serif" font-size="240" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="middle" letter-spacing="-5">TN</text>
+      </svg>
+      <strong style="font-size: 15px; letter-spacing: 0.5px; color: #fff;">QUẢN LÝ ĐƠN - GPT TUẤN NGUYỄN</strong>
+    </div>
+  </header>
+  
+  <div class="container">
+    <button class="logout-circle" id="btnLogout" onclick="logout()" title="Đăng xuất">🚪</button>
+    
+    <!-- MAIN ORDER VIEW -->
+    <div id="orderView">
+
+      <div class="dashboard">
+        <div class="card"><div style="color:var(--muted); font-size:13px; font-weight:600;">📊 Tổng Số Đơn</div><span id="sumAll">0</span></div>
+        <div class="card"><div style="color:var(--muted); font-size:13px; font-weight:600;">🆕 Chưa Triển Khai</div><span id="sumNew" style="color:#f87171;">0</span></div>
+        <div class="card"><div style="color:var(--muted); font-size:13px; font-weight:600;">⚙️ Đang Tiến Hành</div><span id="sumDoing" style="color:#fbbf24;">0</span></div>
+        <div class="card"><div style="color:var(--muted); font-size:13px; font-weight:600;">✅ Đã Hoàn Tất</div><span id="sumDone" style="color:#4ade80;">0</span></div>
+        <div class="card admin-only" style="border-top-color: #8b5cf6;"><div style="color:var(--primary2); font-size:13px; font-weight:800;">💰 TỔNG DOANH THU</div><span id="sumRevenue">0K vnđ</span></div>
+      </div>
+      
+      <!-- KHUNG BIỂU ĐỒ THỐNG KÊ -->
+      <div class="dashboard-charts admin-only" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card" style="position: relative; height: 260px; padding: 16px; display:flex; align-items:center; justify-content:center;"><canvas id="revenueChart"></canvas></div>
+        <div class="card" style="position: relative; height: 260px; padding: 16px; display:flex; align-items:center; justify-content:center;"><canvas id="statusChart"></canvas></div>
+      </div>
+
+      <div class="toolbar" style="background: rgba(15,23,42,0.4); padding: 16px; border-radius: 20px; border: 1px solid var(--line);">
+        <div style="display:flex; flex:1; min-width: 250px; position:relative;">
+            <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); opacity:0.5;">🔍</span>
+            <input id="search" placeholder="Tìm tên khách hàng,..." oninput="page = 1; safeRender()" style="width:100%; padding-left:40px;">
+        </div>
+        <select id="filter" onchange="page = 1; safeRender()" style="font-weight:600;">
+          <option value="all">📍 Tất Cả</option>
+          <option value="Chưa Triển Khai">⏳ Chưa Triển Khai</option>
+          <option value="Đang Triển Khai">⚙️ Đang Triển Khai</option>
+          <option value="Xong">✅ Xong</option>
+          <option value="Đã Bàn Giao">🎉 Đã Bàn Giao</option>
+        </select>
+        <button onclick="requireAuth(createBackup)" style="background: linear-gradient(135deg, #0284c7, #0ea5e9);">📥 Sao Lưu JS</button>
+        <input type="file" id="backupFile" accept=".json" hidden onchange="processRestoreFile(event)">
+        <button class="admin-only" onclick="requireAuth(() => document.getElementById('backupFile').click())" style="background: linear-gradient(135deg, #be123c, #f43f5e);">📤 Phục Hồi JS</button>
+      </div>
+
+      <!-- CHỌN CHẾ ĐỘ XEM -->
+      <div class="view-toggler">
+        <button id="btnViewTable" class="active" onclick="switchView('table')">📄 Dạng Bảng</button>
+        <button id="btnViewKanban" onclick="switchView('kanban')">📋 Kanban Kéo Thả</button>
+        <button id="btnViewCalendar" onclick="switchView('calendar')">📅 Lịch Hẹn</button>
+      </div>
+
+      <div class="toolbar chip-scroll" id="productTabs">
+        <button class="chip active" onclick="setProductTab('all', this)">Tất Cả
+          <span class="badge" id="count-all">0</span><span class="rate" id="rate-all">0%</span>
+        </button>
+        <button class="chip" onclick="setProductTab('Tranh Cát', this)">🎨 Tranh Cát
+          <span class="badge" id="count-tranhcat">0</span><span class="danger" id="overdue-tranhcat" style="display:none;"></span><span class="rate" id="rate-tranhcat">0%</span>
+        </button>
+        <button class="chip" onclick="setProductTab('Chữ Đám Cưới', this)">💍 Chữ Đám Cưới
+          <span class="badge" id="count-chudamcuoi">0</span><span class="danger" id="overdue-chudamcuoi" style="display:none;"></span><span class="rate" id="rate-chudamcuoi">0%</span>
+        </button>
+        <button class="chip" onclick="setProductTab('Bạt', this)">🏳️ Bạt
+          <span class="badge" id="count-bat">0</span><span class="danger" id="overdue-bat" style="display:none;"></span><span class="rate" id="rate-bat">0%</span>
+        </button>
+        <button class="chip" onclick="setProductTab('Khác', this)">📦 Khác
+          <span class="badge" id="count-khac">0</span><span class="danger" id="overdue-khac" style="display:none;"></span><span class="rate" id="rate-khac">0%</span>
+        </button>
+        <button class="chip admin-only" onclick="go('/khach') " style="border-color: var(--primary); color: #fff;">👥 Quản Lý Khách Hàng</button>
+      </div>
+
+      <!-- ĐÃ SỬA: FORM NHẬP NỔI BẬT KHÔNG CÒN KHOẢNG TRỐNG THỪA -->
+      <div class="form">
+        <div style="font-weight:800; font-size:16px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+            <span style="background:var(--primary-grad); padding:6px; border-radius:8px; font-size:12px;">✨</span> TẠO ĐƠN HÀNG MỚI
+        </div>
+        
+        <!-- Hàng 1: Khách hàng, Phân loại, SL & Status sẽ chia đều và co giãn -->
+        <div class="form-row">
+            <div class="form-col wide">
+                <label style="position:absolute; top:-8px; left:12px; background:var(--bg-main); padding:0 4px; font-size:11px; z-index:2; border-radius:4px;">👤 Khách Hàng (*)</label>
+                <input id="name" placeholder="Nhập tên khách..." list="customerList" style="width:100%; position:relative; z-index:1;">
+                <datalist id="customerList"></datalist>
+            </div>
+
+            <div class="form-col">
+                <label style="position:absolute; top:-8px; left:12px; background:var(--bg-main); padding:0 4px; font-size:11px; z-index:2; border-radius:4px;">🏷️ Phân Loại</label>
+                <select id="product" style="width:100%; position:relative; z-index:1;">
+                    <option>Chữ Đám Cưới</option>
+                    <option>Tranh Cát</option>
+                    <option>Bạt</option>
+                    <option>Khác</option>
+                </select>
+            </div>
+            
+            <div class="form-col" style="flex:1.5; min-width: 180px;">
+                <label style="position:absolute; top:-8px; left:12px; background:var(--bg-main); padding:0 4px; font-size:11px; z-index:2; border-radius:4px;">🔢 SL & Tình Trạng</label>
+                <div style="display:flex; gap:8px; width:100%;">
+                    <input id="qty" placeholder="SL" style="width:70px; position:relative; z-index:1;">
+                    <select id="status" style="flex:1; position:relative; z-index:1;">
+                        <option>Chưa Triển Khai</option>
+                        <option>Đang Triển Khai</option>
+                        <option>Xong</option>
+                        <option>Đã Bàn Giao</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hàng 2: Textarea -->
+        <div class="form-row" style="margin-top: 8px;">
+            <div class="form-col" style="width:100%;">
+                <label style="position:absolute; top:-8px; left:12px; background:var(--bg-main); padding:0 4px; font-size:11px; z-index:2; border-radius:4px;">📝 Nội Dung Đơn</label>
+                <textarea id="content" placeholder="Mô tả nội dung đơn hàng, kích thước, chất liệu..." style="width:100%; min-height:60px; position:relative; z-index:1;"></textarea>
+            </div>
+        </div>
+        
+        <!-- Hàng 3: Date và Note -->
+        <div class="form-row" style="margin-top: 8px;">
+            <div class="form-col">
+                <label style="position:absolute; top:-8px; left:12px; background:var(--bg-main); padding:0 4px; font-size:11px; z-index:2; border-radius:4px;">📅 Ngày Đặt</label>
+                <input id="dateOrder" type="date" style="width:100%; position:relative; z-index:1;">
+            </div>
+            <div class="form-col">
+                <label style="position:absolute; top:-8px; left:12px; background:var(--bg-main); padding:0 4px; font-size:11px; z-index:2; border-radius:4px;">⏰ Hẹn Trả</label>
+                <input id="dateDue" type="date" style="width:100%; position:relative; z-index:1;">
+            </div>
+            <div class="form-col wide">
+                <label style="position:absolute; top:-8px; left:12px; background:var(--bg-main); padding:0 4px; font-size:11px; z-index:2; border-radius:4px;">📌 Ghi Chú Thêm</label>
+                <input id="note" placeholder="Lưu ý giao hàng, địa chỉ..." style="width:100%; position:relative; z-index:1;">
+            </div>
+        </div>
+
+        <!-- Hàng 4: Buttons -->
+        <div class="form-row" style="margin-top:8px;">
+            <button onclick="addItem()" style="flex:2; padding:16px; font-size:15px; border-radius:16px;">🚀 TẠO ĐƠN NGAY</button>
+            <button class="admin-only" onclick="exportExcel()" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; box-shadow:none;">📥 Xuất Excel</button>
+            <input type="file" id="excelFile" hidden onchange="importExcel(event)">
+            <button class="admin-only" onclick="document.getElementById('excelFile').click()" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; box-shadow:none;">📤 Nhập Excel</button>
+        </div>
+      </div>
+
+      <!-- VIEW 1: TABLE -->
+      <div id="tableView" class="table-wrap" style="display:block;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th style="width:15%;">Khách Hàng</th>
+              <th style="width:12%;">Phân Loại</th>
+              <th style="width:25%;">Nội Dung Đơn</th>
+              <th style="width:5%;">SL</th>
+              <th style="width:10%;">Ghi Chú</th>
+              <th style="width:12%;">Thời Gian</th>
+              <th class="admin-only" style="width:10%;">Tài Chính</th>
+              <th style="width:12%; text-align:center;">Trạng Thái</th>
+              <th style="width:10%; text-align:center;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="tb">
+            <tr>
+              <td colspan="10">
+                <div style="padding: 20px;">
+                  <div class="skeleton sk-text"></div>
+                  <div class="skeleton sk-text"></div>
+                  <div class="skeleton sk-text" style="width: 70%;"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+
+      <!-- VIEW 2: KANBAN -->
+      <div id="kanbanView" class="kanban-view">
+        <div class="k-col" ondrop="drop(event, 'Chưa Triển Khai')" ondragover="allowDrop(event)">
+          <div class="k-col-header" style="color: #f87171;">⏳ Chưa Triển Khai (<span id="kb-count-1">0</span>)</div>
+          <div id="kb-col-1" style="min-height: 100px; display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+        <div class="k-col" ondrop="drop(event, 'Đang Triển Khai')" ondragover="allowDrop(event)">
+          <div class="k-col-header" style="color: #fbbf24;">⚙️ Đang Triển Khai (<span id="kb-count-2">0</span>)</div>
+          <div id="kb-col-2" style="min-height: 100px; display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+        <div class="k-col" ondrop="drop(event, 'Xong')" ondragover="allowDrop(event)">
+          <div class="k-col-header" style="color: #60a5fa;">✅ Xong (<span id="kb-count-3">0</span>)</div>
+          <div id="kb-col-3" style="min-height: 100px; display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+        <div class="k-col" ondrop="drop(event, 'Đã Bàn Giao')" ondragover="allowDrop(event)">
+          <div class="k-col-header" style="color: #4ade80;">🎉 Đã Bàn Giao (<span id="kb-count-4">0</span>)</div>
+          <div id="kb-col-4" style="min-height: 100px; display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: CALENDAR -->
+      <div id="calendarView" class="calendar-view">
+        <div class="cal-header">
+          <button onclick="changeMonth(-1)" style="background:rgba(255,255,255,0.1); border-radius:12px;">⬅ Tháng Trước</button>
+          <h2 id="calMonthYear" style="margin:0; font-size:22px;">Tháng ...</h2>
+          <button onclick="changeMonth(1)" style="background:rgba(255,255,255,0.1); border-radius:12px;">Tháng Sau ➡</button>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-day-name" style="color:#ef4444;">CN</div><div class="cal-day-name">Thứ 2</div><div class="cal-day-name">Thứ 3</div>
+          <div class="cal-day-name">Thứ 4</div><div class="cal-day-name">Thứ 5</div><div class="cal-day-name">Thứ 6</div><div class="cal-day-name" style="color:#3b82f6;">Thứ 7</div>
+        </div>
+        <div id="calGrid" class="cal-grid" style="margin-top:8px;"></div>
+      </div>
+
+    </div>
+    
+    <!-- KHÁCH HÀNG VIEWS -->
+    <div id="customerListView" style="display:none"></div>
+    <div id="customerDetailView" style="display:none"></div>
+    <div id="customerTrackingView" style="display:none"></div>
+
+  </div>
+
+  <!-- ALL MODALS & POPUPS HERE -->
+  
+  <!-- Modal Chỉnh Sửa Đơn Hàng -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      
+      <!-- Modal Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:16px">
+        <div>
+          <div class="modal-title">✏️ CHỈNH SỬA ĐƠN HÀNG - <span id="orderCodeText" style="color:var(--primary2);"></span></div>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+            <span style="font-size:12px; color:var(--muted);">🔗 Client Link:</span>
+            <input id="trackingLink" readonly style="flex:1; padding: 4px; font-size: 11px; background:transparent; border:none; outline:none; color:#38bdf8;">
+            <button onclick="copyTrackingLink()" style="padding: 4px 10px; font-size: 11px; background:var(--primary); border-radius:6px;">Copy</button>
+          </div>
+        </div>
+        <button onclick="closeModal()" style="background:rgba(239, 68, 68, 0.2); color:#ef4444; padding:8px 12px; border-radius:12px; box-shadow:none;">Đóng ✕</button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="grid2" style="margin-top: 5px;">
+        
+        <!-- Cột 1 -->
+        <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);">
+          <div style="font-weight: 800; font-size:14px; margin-bottom: 16px; color: #e2e8f0; display:flex; align-items:center; gap:8px;"><span style="background:rgba(255,255,255,0.1); padding:4px; border-radius:6px;">📦</span> Thông Tin Chung</div>
+          
+          <label>👤 Tên Khách Hàng</label>
+          <input id="e_name" style="width:100%; margin-bottom:12px;">
+          
+          <label>🏷️ Nhóm Sản Phẩm</label>
+          <select id="e_product" style="width:100%; margin-bottom:12px;">
+            <option>Chữ Đám Cưới</option>
+            <option>Tranh Cát</option>
+            <option>Bạt</option>
+            <option>Khác</option>
+          </select>
+          
+          <div style="display:flex; gap:12px; margin-bottom:12px;">
+            <div style="flex:1">
+              <label>🔢 Số Lượng</label>
+              <input id="e_qty" style="width:100%;">
+            </div>
+            <div style="flex:2">
+              <label>📌 Trạng Thái Hiện Tại</label>
+              <select id="e_status" style="width:100%;">
+                <option>Chưa Triển Khai</option>
+                <option>Đang Triển Khai</option>
+                <option>Xong</option>
+                <option>Đã Bàn Giao</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cột 2 -->
+        <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);">
+          <div style="font-weight: 800; font-size:14px; margin-bottom: 16px; color: #4ade80; display:flex; align-items:center; gap:8px;"><span style="background:rgba(34, 197, 94, 0.1); padding:4px; border-radius:6px;">⏱</span> Thời Gian & Tài Chính</div>
+          
+          <div style="display:flex; gap:12px; margin-bottom:12px;">
+            <div style="flex:1">
+              <label>Ngày Chốt Đơn</label>
+              <input id="e_order" type="date" style="width:100%;">
+            </div>
+            <div style="flex:1">
+              <label style="color:#fbbf24;">Deadline Hẹn Trả</label>
+              <input id="e_due" type="date" style="width:100%; border-color:rgba(245, 158, 11, 0.3);">
+            </div>
+          </div>
+          
+          <label>Ngày Gửi Demo (Dự kiến)</label>
+          <input id="e_demo" type="date" style="width:100%; margin-bottom:16px;">
+          
+          <div class="admin-only" style="display:flex; gap:12px; background:rgba(34, 197, 94, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(34, 197, 94, 0.1);">
+            <div style="flex:1">
+              <label style="color:#4ade80; margin-top:0;">💰 Báo Giá (K)</label>
+              <input id="e_price" type="number" placeholder="VD: 500" style="width:100%; font-weight:700;">
+            </div>
+            <div style="flex:1">
+              <label style="color:#fbbf24; margin-top:0;">💵 Khách Cọc (K)</label>
+              <input id="e_deposit" type="number" placeholder="VD: 200" style="width:100%; font-weight:700;">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="full-row" style="margin-top: 5px;">
+        <label>📝 Nội dung & Yêu cầu chi tiết</label>
+        <textarea id="e_content" style="width:100%; min-height:80px;"></textarea>
+      </div>
+      <div class="full-row" style="margin-top: 5px;">
+        <label>📌 Ghi chú nội bộ</label>
+        <input id="e_note" style="width:100%;">
+      </div>
+
+      <!-- KHUNG CHECKLIST -->
+      <div class="full-row" style="margin-top: 10px;">
+        <label style="color:#c084fc;">✅ Checklist Tiến Độ Công Việc (Đầu việc con)</label>
+        <div id="e_checklist_box" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; border: 1px dashed rgba(192, 132, 252, 0.3); display: flex; flex-direction: column; gap: 8px;"></div>
+        <div style="display:flex; gap:10px; margin-top:12px;">
+          <input id="new_task" placeholder="VD: Lên file 3D, Cắt CNC, Sơn màu..." style="flex:1; background:rgba(0,0,0,0.2);">
+          <button onclick="addChecklist()" style="background: rgba(255,255,255,0.1); box-shadow:none; white-space: nowrap;">+ Thêm Mục</button>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:12px;border-top:1px solid rgba(255,255,255,0.05);padding-top:20px; margin-top: 10px;">
+        <button onclick="closeModal()" style="background:transparent; border:1px solid rgba(255,255,255,0.1); padding: 12px 24px; font-size: 14px; box-shadow:none;">Hủy Bỏ</button>
+        <button onclick="saveEdit()" style="padding: 12px 30px; font-size: 15px; border-radius:14px;">💾 Lưu Thông Tin</button>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Modal Quản Lý Ảnh -->
+  <div class="modal" id="imgModal">
+    <div class="modal-content" style="width:600px;">
+      <div style="display:flex;justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:16px; margin-bottom:16px;">
+        <b style="font-size:18px;">🖼 KHO LƯU TRỮ ẢNH DEMO</b>
+        <button onclick="closeImgModal()" style="background:rgba(255,255,255,0.1); padding:6px 12px; box-shadow:none;">Đóng</button>
+      </div>
+      <div id="dropZone" style="border:2px dashed rgba(124, 58, 237, 0.4); background:rgba(124, 58, 237, 0.05); padding:40px 20px; text-align:center; border-radius:20px; margin-bottom:20px; cursor:pointer; font-weight:600; color:var(--primary2); transition:0.2s;">
+        <div style="font-size:32px; margin-bottom:10px;">📥</div>
+        Kéo & thả / Click / Ctrl + V để dán ảnh vào đây
+      </div>
+      <input type="file" id="imgInput" multiple accept="image/*" hidden>
+      <div id="imgPreview" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:16px;"></div>
+      <div style="border-top:1px solid rgba(255,255,255,0.05); padding-top:20px; margin-top:10px; text-align:right;">
+        <button onclick="saveImages()" style="padding:12px 30px; font-size:15px; border-radius:14px;">💾 Hoàn Tất Bổ Sung Ảnh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Đăng Nhập (Lock Screen Mới) HOÀN TOÀN CĂN GIỮA -->
+  <div class="modal" id="pwModal" style="backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); background: rgba(2, 6, 23, 0.9);">
+    <div class="lock-container">
+        <div class="lock-icon">🔐</div>
+        <h2>Bảo Mật Hệ Thống</h2>
+        <p>Vui lòng nhập mã PIN để truy cập.</p>
+        <!-- Căn giữa ô nhập PIN -->
+        <input type="password" id="pinInput" class="pin-field" maxlength="4" placeholder="••••">
+        <div id="pinError" style="color: #ef4444; font-size: 13px; margin-top: 20px; opacity: 0; transition: 0.3s; font-weight: 700; background:rgba(239, 68, 68, 0.1); padding:8px; border-radius:8px; display:inline-block; margin-left:auto; margin-right:auto;">Mã PIN không chính xác!</div>
+    </div>
+  </div>
+
+  <!-- Modal Xác Nhận Xóa -->
+  <div class="modal" id="confirmModal">
+    <div class="modal-content" style="max-width:400px; text-align:center; padding:30px;">
+      <div style="font-size:40px; margin-bottom:10px;">⚠️</div>
+      <div style="font-size:20px;font-weight:800; color:#fff;">Xác Nhận Hành Động</div>
+      <div id="confirmMessage" style="color:var(--muted); margin: 15px 0 25px; line-height:1.5; font-size:15px;">Bạn có chắc muốn xoá?</div>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button onclick="closeConfirm()" style="flex:1; background:rgba(255,255,255,0.1); box-shadow:none;">Hủy</button>
+        <button id="confirmOkBtn" style="flex:1; background:#ef4444;">Xác nhận Xóa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thông báo & Toast -->
+  <div class="toast" id="toast"></div>
+  <div id="firebaseStatus">
+    <span id="fbDot" style="width:12px;height:12px;border-radius:50%;background:#f59e0b; box-shadow:0 0 10px #f59e0b;"></span>
+    <span id="firebaseText">Đang kết nối Firebase...</span>
+  </div>
+  <!-- TEMPLATE HÓA ĐƠN/BÁO GIÁ ẨN ĐỂ XUẤT PDF -->
+<div id="invoiceTemplate" style="display: none; background: #ffffff; color: #000000; padding: 40px; font-family: 'Plus Jakarta Sans', sans-serif; width: 750px; box-sizing: border-box;">
+      <!-- Header Công Ty -->
+      <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #7c3aed; padding-bottom: 20px; margin-bottom: 20px;">
+          <div>
+              <h1 style="margin: 0; color: #7c3aed; font-size: 28px; font-weight: 800; text-transform: uppercase;">HOÀNG GIA EVENTS</h1>
+              <p style="margin: 5px 0; font-size: 14px; color: #475569; font-weight: 600;">Dịch vụ Thiết Kế, Biển Bảng & Sự Kiện Chuyên Nghiệp</p>
+              <p style="margin: 5px 0; font-size: 14px; color: #475569;">Zalo/Hotline: 0973.844.828</p>
+          </div>
+          <div style="text-align: right;">
+              <h2 style="margin: 0; font-size: 24px; color: #0f172a; text-transform: uppercase;">Bảng Báo Giá</h2>
+              <p style="margin: 5px 0; font-size: 14px; color: #475569;">Mã đơn: <strong id="invCode" style="color: #000;">---</strong></p>
+              <p style="margin: 5px 0; font-size: 14px; color: #475569;">Ngày lập: <strong id="invDate" style="color: #000;">---</strong></p>
+          </div>
+      </div>
+      <!-- Thông Tin Khách -->
+      <div style="margin-bottom: 30px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <h3 style="font-size: 16px; color: #0f172a; border-left: 4px solid #7c3aed; padding-left: 8px; margin-top: 0;">THÔNG TIN KHÁCH HÀNG</h3>
+          <p style="margin: 6px 0; font-size: 14px;">Đại diện / Đơn vị: <strong><span id="invCusName">---</span></strong></p>
+          <p style="margin: 6px 0; font-size: 14px;">Số điện thoại: <strong><span id="invCusPhone">---</span></strong></p>
+          <p style="margin: 6px 0; font-size: 14px;">Địa chỉ: <strong><span id="invCusAddr">---</span></strong></p>
+      </div>
+      <!-- Bảng Sản Phẩm -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; color: #000000; table-layout: fixed;">
+          <thead>
+              <tr style="background: #ffffff; color: #000000 !important;">
+                  <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: left; font-size: 14px; width: 32%; color: #000000 !important;">Sản Phẩm</th>
+                  <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right; font-size: 14px; width: 30%; color: #000000 !important;">Thành Tiền</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr style="color: #000000;">
+                  <td style="padding: 16px 12px; border: 1px solid #cbd5e1; word-wrap: break-word; overflow-wrap: break-word;">
+                      <strong id="invProduct" style="font-size: 15px; color: #000000;">---</strong>
+                      <div id="invContent" style="font-size: 13px; color: #334155; margin-top: 8px; white-space: pre-wrap; line-height: 1.5; word-wrap: break-word;">---</div>
+                  </td>
+                  <td style="padding: 16px 12px; border: 1px solid #cbd5e1; text-align: right; vertical-align: top; color: #0f172a;"><strong id="invPrice" style="color: #000000;">0</strong></td>
+                  <td style="padding: 16px 12px; border: 1px solid #cbd5e1; text-align: center; vertical-align: top; color: #000000;" id="invQty">1</td>
+                  
+              </tr>
+          </tbody>
+      </table>
+      <!-- Tóm Tắt Tiền -->
+      <div style="display: flex; justify-content: flex-end;">
+          <div style="width: 320px;">
+              <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #cbd5e1; font-size: 15px;">
+                  <span style="color: #475569;">Tổng chi phí:</span><strong id="invTotal" style="color: #0f172a;">0 VNĐ</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #cbd5e1; font-size: 15px;">
+                  <span style="color: #475569;">Đã đặt cọc:</span><strong id="invDeposit" style="color: #16a34a;">0 VNĐ</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 18px; color: #dc2626; background: #fef2f2; margin-top: 10px; border-radius: 8px; padding-left: 10px; padding-right: 10px;">
+                  <strong>CÒN LẠI:</strong><strong id="invDebt">0 VNĐ</strong>
+              </div>
+          </div>
+      </div>
+      <!-- Chữ Ký / Footer -->
+      <div style="margin-top: 60px; display: flex; justify-content: space-between; font-size: 14px; color: #0f172a;">
+          <div style="text-align: center; width: 40%;"><strong>ĐẠI DIỆN KHÁCH HÀNG</strong><p style="color: #94a3b8; font-style: italic; margin-top: 5px;">(Ký & Ghi rõ họ tên)</p></div>
+          <div style="text-align: center; width: 40%;"><strong>ĐẠI DIỆN ĐƠN VỊ</strong><p style="color: #94a3b8; font-style: italic; margin-top: 5px;">Tuấn Nguyễn</p></div>
+      </div>
+  </div>
+  <!-- ================= LIGHRBOX ================= -->
+   <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close">✕</button>
+    <img id="lightboxImg" src="" onclick="event.stopPropagation()">
+</div>
+  <!-- ================= SCRIPTS ================= -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <script>
+    let canDeleteImage = false;
+    let isFirstLoad = true;
+    let lastStatusMap = {};
+    let productTab = "all";
+    let canEdit = false;
+    let viewMode = "table"; 
+    
+    /* --- PHÂN QUYỀN --- */
+    const ADMIN_PW = "9123";
+    const STAFF_PW = "1111"; 
+    let currentUserRole = "guest"; 
+    /* ------------------ */
+
+    let data = [];
+    let filteredData = [];
+    let editId = null;
+    let page = 1;
+    const pageSize = 30;
+    let customers = [];
+    let calCurrentDate = new Date();
+    let fbStatus = "connecting";
+    let notifyLog = {};
+    let pendingAction = null;
+
+    /* AUDIO SYSTEM */
+    const soundMap = {
+      success: "https://actions.google.com/sounds/v1/notifications/positive_notification.ogg",
+      error: "https://actions.google.com/sounds/v1/notifications/error_notification.ogg",
+      warning: "https://actions.google.com/sounds/v1/notifications/high_pitch_beep_01.ogg",
+      info: "https://actions.google.com/sounds/v1/notifications/notification_01.ogg"
+    };
+
+    function playSound(type) {
+      if (soundMap[type]) {
+        let audio = new Audio(soundMap[type]);
+        audio.play().catch(() => {});
+      }
+    }
+
+    document.addEventListener("click", unlockAudio, { once: true });
+    function unlockAudio() {
+      let silentAudio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+      silentAudio.play().catch(() => {});
+    }
+
+    /* FIREBASE INITIALIZATION */
+    firebase.initializeApp({
+      apiKey: "AIzaSyB5yZCGW83KiJW6U0-b77SbqiZmwzjKy2M",
+      authDomain: "tuanne-ee1a5.firebaseapp.com",
+      databaseURL: "https://tuanne-ee1a5-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "tuanne-ee1a5",
+      storageBucket: "tuanne-ee1a5.firebasestorage.app",
+      messagingSenderId: "1063135562916",
+      appId: "1:1063135562916:web:44fed41ac2dd7aa2256a31"
+    });
+
+    const db = firebase.firestore();
+    const col = db.collection("crm_orders");
+    const customerCol = db.collection("crm_customers");
+    const storage = firebase.storage();
+
+    /* ĐÃ SỬA: Nâng giới hạn lấy dữ liệu lên 1500 để hiển thị đầy đủ ở mọi view */
+    col.orderBy("order", "desc").limit(1500).onSnapshot(
+      s => {
+        data = [];
+        s.forEach(d => data.push({ id: d.id, ...d.data() }));
+        migrateOrderCodes();
+        updateCustomerSuggestions();
+        updateTabCounts();
+
+        fbStatus = "ok";
+        updateFirebaseUI();
+        if (!isFirstLoad) { checkDueRealtime(); }
+
+        isFirstLoad = false;
+        lastFilterKey = "";
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("track")) {
+          checkTrackingMode();
+        } else {
+          setTimeout(() => safeRender(), 50);
+          if (location.hash.includes("khach")) renderRoute();
+        }
+      },
+      err => {
+        console.error(err);
+        fbStatus = "error";
+        updateFirebaseUI();
+      }
+    );
+
+    customerCol.onSnapshot(s => {
+      customers = [];
+      s.forEach(doc => customers.push({ id: doc.id, ...doc.data() }));
+      if (location.hash.includes("khach")) renderRoute();
+    });
+
+    function updateFirebaseUI() {
+      const dot = document.getElementById("fbDot");
+      const text = document.getElementById("firebaseText");
+      if(!dot || !text) return;
+
+      if (fbStatus === "connecting") {
+        dot.style.background = "#f59e0b";
+        dot.style.boxShadow = "0 0 10px #f59e0b";
+        text.innerText = "Đang kết nối Firebase...";
+      } else if (fbStatus === "ok") {
+        dot.style.background = "#22c55e";
+        dot.style.boxShadow = "0 0 10px #22c55e";
+        text.innerText = "Hệ thống hoạt động tốt";
+      } else if (fbStatus === "error") {
+        dot.style.background = "#ef4444";
+        dot.style.boxShadow = "0 0 10px #ef4444";
+        text.innerText = "Mất kết nối máy chủ";
+      }
+    }
+
+    /* CORE UTILS */
+    function val(id) { return document.getElementById(id).value || ""; }
+    function generateOrderCode() { return "DH" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 900 + 100); }
+    function generateCustomerCode() { return "KH" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 90 + 10); }
+
+    async function migrateOrderCodes() {
+      for (const d of data) {
+        if (!d.code) await col.doc(d.id).update({ code: generateOrderCode() });
+      }
+    }
+
+    function copyTrackingLink() {
+      const input = document.getElementById("trackingLink");
+      input.select();
+      input.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(input.value);
+      toast("📋 Đã copy link theo dõi", "success");
+    }
+
+    /* SWITCH VIEW */
+    function switchView(mode) {
+      viewMode = mode;
+      
+      // Reset nút tab active
+      document.querySelectorAll('.view-toggler button').forEach(b => b.classList.remove('active'));
+      let activeBtn = document.getElementById(mode === 'table' ? 'btnViewTable' : mode === 'kanban' ? 'btnViewKanban' : 'btnViewCalendar');
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Tắt / Bật Display an toàn
+      let tb = document.getElementById('tableView'); if(tb) tb.style.display = mode === 'table' ? 'block' : 'none';
+      let kb = document.getElementById('kanbanView'); if(kb) kb.style.display = mode === 'kanban' ? 'grid' : 'none';
+      let cal = document.getElementById('calendarView'); if(cal) cal.style.display = mode === 'calendar' ? 'block' : 'none';
+      
+      safeRender();
+    }
+
+    /* ADD ORDER */
+    async function addItem() {
+      if (!val("name")) return toast("Thiếu tên khách", "warning");
+
+      await col.add({
+        name: val("name"),
+        product: val("product"),
+        content: val("content"),
+        qty: val("qty"),
+        note: val("note"),
+        code: generateOrderCode(),
+        order: val("dateOrder") ? new Date(val("dateOrder")).getTime() : Date.now(),
+        due: val("dateDue") ? new Date(val("dateDue")).getTime() : "",
+        demo: "",
+        price: 0,
+        deposit: 0,
+        images: [],
+        status: val("status"),
+        history: [{ time: Date.now(), action: "create" }]
+      });
+      
+      clearForm();
+      lastFilterKey = "";
+      await autoCleanIfOverLimit();
+      safeRender();
+      toast("Thêm đơn thành công", "success");
+    }
+
+    function updateCustomerSuggestions() {
+      let names = [...new Set(data.map(d => d.name).filter(Boolean))];
+      document.getElementById("customerList").innerHTML = names.map(n => `<option value="${n}">`).join("");
+    }
+
+    function clearForm() {
+      ["name","content","qty","note","dateOrder","dateDue"].forEach(id => {
+          if(document.getElementById(id)) document.getElementById(id).value = "";
+      });
+      document.getElementById("product").value = "Chữ Đám Cưới";
+      document.getElementById("status").value = "Chưa Triển Khai";
+    }
+
+    /* FILTER TABS */
+    function setProductTab(tab, el) {
+      productTab = tab; page = 1;
+      document.querySelectorAll("#productTabs button").forEach(b => b.classList.remove("active"));
+      if (el) el.classList.add("active");
+      safeRender();
+    }
+
+    function updateTabCounts() {
+      const calc = (p) => {
+        const list = data.filter(d => p === "all" ? true : d.product === p);
+        const total = list.length;
+        const done = list.filter(d => d.status === "Xong" || d.status === "Đã Bàn Giao").length;
+        const overdue = list.filter(d => getDueStatus(d.due, d.status) === "overdue").length;
+        return { total, done, overdue, rate: total ? Math.round((done / total) * 100) : 0 };
+      };
+
+      const map = { "all": "all", "Tranh Cát": "tranhcat", "Chữ Đám Cưới": "chudamcuoi", "Bạt": "bat", "Khác": "khac" };
+      for (let key in map) {
+        const r = calc(key);
+        const k = map[key];
+        const c = document.getElementById("count-" + k);
+        const d = document.getElementById("overdue-" + k);
+        const t = document.getElementById("rate-" + k);
+        if (c) c.innerText = r.total;
+        if (d) { d.innerText = r.overdue ? "🔴 " + r.overdue : ""; d.style.display = r.overdue ? "inline-block" : "none"; }
+        if (t) {
+            t.innerText = r.rate + "%";
+            t.className = "rate " + (r.rate < 40 ? "low" : r.rate < 80 ? "mid" : "high");
+        }
+      }
+    }
+
+    function formatDM(value) {
+      if (!value) return "";
+      let d = new Date(Number(value));
+      if (isNaN(d.getTime())) return "";
+      return String(d.getDate()).padStart(2, '0') + "/" + String(d.getMonth() + 1).padStart(2, '0');
+    }
+
+    /* RENDER SYSTEM */
+    let lastFilterKey = "";
+    let lastSearch = "";
+    let cachedFiltered = [];
+    let renderTimeout = null;
+
+    function safeRender() {
+      if (renderTimeout) clearTimeout(renderTimeout);
+      renderTimeout = setTimeout(() => {
+        let search = removeVietnamese(val("search"));
+        let filter = val("filter");
+        let key = search + "|" + filter + "|" + productTab;
+
+        if (key !== lastFilterKey) {
+          cachedFiltered = data.filter(d =>
+            (filter === "all" || d.status === filter) &&
+            (productTab === "all" || d.product === productTab) &&
+            removeVietnamese(d.name).includes(search)
+          );
+          lastFilterKey = key;
+        }
+
+        filteredData = cachedFiltered;
+        updateDash();
+        updateCharts();
+
+        if (viewMode === 'table') {
+          let totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+          if (page > totalPages) page = totalPages;
+          let start = (page - 1) * pageSize;
+          renderTable(filteredData.slice(start, start + pageSize), start);
+          renderPagination(totalPages);
+        } else if (viewMode === 'kanban') {
+          renderKanban(filteredData);
+        } else if (viewMode === 'calendar') {
+          renderCalendar(filteredData);
+        }
+      }, 50);
+    }
+
+    function renderTable(pageData, start) {
+      const tbody = document.getElementById("tb");
+      if(!tbody) return;
+      tbody.innerHTML = "";
+      const fragment = document.createDocumentFragment();
+
+      pageData.forEach((d, i) => {
+        const tr = document.createElement("tr");
+        tr.setAttribute("data-id", d.id);
+        
+        let dueClass = getDueStatus(d.due, d.status);
+        tr.className = dueClass;
+
+        let price = Number(d.price) || 0;
+        let deposit = Number(d.deposit) || 0;
+        let moneyHtml = `<div style="font-weight:700; color:#fff;">Giá: ${price.toLocaleString()}K</div><div style="font-size:12px; color:#fbbf24;">Cọc: ${deposit.toLocaleString()}K</div>`;
+
+        let statusClass = "st-new";
+        if(d.status === "Đang Triển Khai") statusClass = "st-doing";
+        if(d.status === "Xong") statusClass = "st-done";
+        if(d.status === "Đã Bàn Giao") statusClass = "st-delivered";
+        let statusHtml = `<span class="status-badge ${statusClass}">${d.status || ""}</span>`;
+
+        let productIcon = "📦"; 
+        if (d.product === "Tranh Cát") productIcon = "🎨";
+        else if (d.product === "Chữ Đám Cưới") productIcon = "💍";
+        else if (d.product === "Bạt") productIcon = "🏳️";
+
+        tr.innerHTML = `
+            <td style="color:var(--muted); font-weight:600;">${start + i + 1}</td>
+            <td ondblclick="goToCustomerDetail('${d.name}')" style="cursor: pointer;" title="Nháy đúp để xem chi tiết khách hàng"><b style="color:#fff; font-size:15px;">${d.name || ""}</b><br><span style="color:var(--muted); font-size:11px; background:rgba(0,0,0,0.3); padding:2px 6px; border-radius:4px;">${d.code || ""}</span></td>
+            <td ondblclick="openEdit('${d.id}')" style="cursor: pointer;" title="Nháy đúp để chỉnh sửa đơn hàng"><span style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:8px;">${productIcon} ${d.product || ""}</span></td>
+            <td ondblclick="openImageModal('${d.id}')" style="max-width: 250px; cursor:pointer; white-space: pre-wrap; word-break: break-word;" title="Nháy đúp để quản lý ảnh">${d.images && d.images.length > 0 ? '<span style="margin-right:6px; font-size:16px;">📸</span>' : ''}<span style="opacity:0.9;">${d.content || ""}</span></td>
+            <td style="font-weight:700; text-align:center;">${d.qty || ""}</td>
+            <td style="max-width: 140px; color:#cbd5e1; font-size:15px; white-space: pre-wrap; word-break: break-word;">${d.note || ""}</td>
+            <td style="font-size:13px; line-height:1.6;">
+              <div>Đặt: <span style="color:#fff;">${formatDM(d.order)}</span></div>
+              <div>Hẹn: <span style="color:#fbbf24; font-weight:700;">${formatDM(d.due)}</span></div>
+              <div style="opacity:0.7">Demo: ${formatDM(d.demo) || '---'}</div>
+            </td>
+            <td class="admin-only" style="white-space:nowrap;">${moneyHtml}</td>
+            <td style="text-align:center;">${statusHtml}</td>
+            <td class="action-cell">
+                <button onclick="openEdit('${d.id}')" title="Sửa chi tiết">✏️</button>
+                <button class="btn-zalo" onclick="openZaloDialog('${d.id}')" title="Gửi thông báo Zalo">💬</button>
+                <button class="admin-only" style="background: rgba(124, 58, 237, 0.2); color: #c084fc; border: 1px solid rgba(124, 58, 237, 0.4);" onclick="exportPDF('${d.id}')" title="Xuất Báo Giá PDF">📄</button>
+                <button onclick="viewHistory('${d.id}')" title="Lịch sử chỉnh sửa">📜</button>
+                <button class="admin-only btn-del" onclick="del('${d.id}')" title="Xóa đơn hàng">🗑</button>
+            </td>
+        `;
+        fragment.appendChild(tr);
+      });
+      tbody.appendChild(fragment);
+    }
+
+    function renderKanban(list) {
+        const cols = { "Chưa Triển Khai": [], "Đang Triển Khai": [], "Xong": [], "Đã Bàn Giao": [] };
+        list.forEach(d => { if(cols[d.status]) cols[d.status].push(d); });
+
+        let i = 1;
+        for (let status in cols) {
+            let displayList = cols[status]; 
+            let countEl = document.getElementById(`kb-count-${i}`);
+            if(countEl) countEl.innerText = displayList.length;
+            
+            let colEl = document.getElementById(`kb-col-${i}`);
+            if(colEl) {
+                /* SỐ 2: TRẠNG THÁI RỖNG */
+                if (displayList.length === 0) {
+                     colEl.innerHTML = `<div style="text-align:center; padding:30px 10px; color:rgba(255,255,255,0.3); font-size:13px; border:1px dashed rgba(255,255,255,0.1); border-radius:12px;">Chưa có đơn nào</div>`;
+                } else {
+                    /* SỐ 3: THÊM TÍNH NĂNG COLOR CODING */
+                    colEl.innerHTML = displayList.map(d => {
+                        let productIcon = "📦"; 
+                        if (d.product === "Tranh Cát") productIcon = "🎨";
+                        else if (d.product === "Chữ Đám Cưới") productIcon = "💍";
+                        else if (d.product === "Bạt") productIcon = "🏳️";
+                        
+                        return `
+                        <div class="k-card" data-product="${d.product}" draggable="true" ondragstart="drag(event, '${d.id}')" onclick="openEdit('${d.id}')">
+                            <div class="k-title">${d.name}</div>
+                            <div class="k-info" style="display:flex; align-items:center; gap:4px;">${productIcon} ${d.product} - SL: <b style="color:#fff;">${d.qty||1}</b></div>
+                            ${d.due ? `<div class="k-due ${getDueStatus(d.due, d.status) === 'overdue' ? 'danger' : ''}">⏰ Hẹn: ${formatDM(d.due)}</div>` : ''}
+                            ${d.images && d.images.length > 0 ? '<div style="position:absolute; top:12px; right:12px; opacity:0.6;">📸</div>' : ''}
+                        </div>`;
+                    }).join("");
+                }
+            }
+            i++;
+        }
+    }
+
+    function drag(ev, id) { ev.dataTransfer.setData("id", id); }
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drop(ev, newStatus) {
+        ev.preventDefault();
+        let id = ev.dataTransfer.getData("id");
+        if(id) {
+            requireAuth(() => {
+                let d = data.find(x => x.id === id);
+                if (!d) return;
+
+                let newHistory = d.history || [];
+                newHistory.push({ time: Date.now(), action: "edit", changes: { status: { old: d.status || "", new: newStatus } } });
+
+                col.doc(id).update({ status: newStatus, history: newHistory })
+                   .then(() => toast("Chuyển trạng thái thành công!", "success"))
+                   .catch(e => toast("Lỗi khi chuyển trạng thái!", "error"));
+
+                if (newStatus === "Xong" && d.status !== "Xong") {
+                    openZaloDialog(d.id);
+                }
+            });
+        }
+    }
+
+    function renderCalendar(list) {
+        const year = calCurrentDate.getFullYear();
+        const month = calCurrentDate.getMonth();
+        let calTitle = document.getElementById("calMonthYear");
+        if(calTitle) calTitle.innerText = `Tháng ${month + 1} - ${year}`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        let html = "";
+        for(let i=0; i<firstDay; i++) html += `<div class="cal-cell" style="opacity:0.1; background:transparent; border:none;"></div>`;
+        
+        let today = new Date();
+        for(let day=1; day<=daysInMonth; day++) {
+            let isToday = (day === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+            let dayStart = new Date(year, month, day).getTime();
+            let dayEnd = new Date(year, month, day, 23, 59, 59).getTime();
+            
+            let eventsHtml = list.filter(d => d.due && d.due >= dayStart && d.due <= dayEnd).map(d => {
+                let c = "cal-event";
+                let icon = "📦"; 
+                if (d.product === "Tranh Cát") icon = "🎨";
+                else if (d.product === "Chữ Đám Cưới") icon = "💍";
+                else if (d.product === "Bạt") icon = "🏳️";
+
+                if(d.status === "Xong" || d.status === "Đã Bàn Giao") c += " done";
+                else if(d.status === "Đang Triển Khai") c += " soon";
+                else if(getDueStatus(d.due, d.status) === "overdue") c += " overdue";
+                
+                return `<div class="${c}" onclick="openEdit('${d.id}')" title="${d.product}">${icon} ${d.name}</div>`;
+            }).join("");
+
+            html += `<div class="cal-cell ${isToday ? 'today' : ''}"><div class="date-num">${day}</div><div style="display:flex; flex-direction:column; gap:4px; overflow-y:auto; flex:1; scrollbar-width:none;">${eventsHtml}</div></div>`;
+        }
+        let calGrid = document.getElementById("calGrid");
+        if(calGrid) calGrid.innerHTML = html;
+    }
+    function changeMonth(step) {
+        calCurrentDate.setMonth(calCurrentDate.getMonth() + step);
+        safeRender();
+    }
+
+    function toDateInput(ts) {
+      if (!ts) return "";
+      let d = new Date(Number(ts));
+      return d.toISOString().split("T")[0];
+    }
+
+    function updateDash() {
+      const c = s => data.filter(d => d.status === s).length;
+      document.getElementById("sumAll").innerText = data.length;
+      document.getElementById("sumNew").innerText = c("Chưa Triển Khai");
+      document.getElementById("sumDoing").innerText = c("Đang Triển Khai");
+      document.getElementById("sumDone").innerText = c("Đã Bàn Giao");
+
+      let totalRevenue = 0;
+      data.forEach(d => {
+        let price = Number(d.price) || 0;
+        totalRevenue += price;
+      });
+      document.getElementById("sumRevenue").innerText = totalRevenue.toLocaleString("vi-VN") + "K vnđ";
+    }
+
+    function renderPagination(total) {
+      let html = `<div class='pageBtn' onclick='changePage(${page-1})'>⬅</div>`;
+      for (let i = 1; i <= total; i++) html += `<div class='pageBtn ${i===page?"active":""}' onclick='changePage(${i})'>${i}</div>`;
+      html += `<div class='pageBtn' onclick='changePage(${page+1})'>➡</div>`;
+      document.getElementById("pagination").innerHTML = html;
+    }
+    function changePage(p) {
+      let max = Math.ceil(filteredData.length / pageSize) || 1;
+      if (p < 1 || p > max) return;
+      page = p; safeRender();
+    }
+
+    /* EDIT ORDER */
+    function openEdit(id) {
+      editId = id;
+      let d = data.find(x => x.id === id);
+      document.getElementById("orderCodeText").innerText = d.code || "";
+      document.getElementById("trackingLink").value = window.location.origin + window.location.pathname + "?track=" + d.code;
+      
+      set("e_name", d.name); set("e_product", d.product); set("e_content", d.content);
+      set("e_qty", d.qty); set("e_note", d.note); set("e_order", toDateInput(d.order));
+      set("e_due", toDateInput(d.due)); set("e_demo", toDateInput(d.demo));
+      set("e_price", d.price || 0); set("e_deposit", d.deposit || 0); set("e_status", d.status);
+      
+      currentChecklist = d.checklist ? [...d.checklist] : [];
+      renderChecklistEdit();
+
+      document.getElementById("modal").style.display = "flex";
+    }
+
+    function set(id, v) { document.getElementById(id).value = v || ""; }
+    function closeModal() { document.getElementById("modal").style.display = "none"; editId = null; }
+
+    /* SAVE EDIT */
+    async function saveEdit() {
+      let old = data.find(d => d.id === editId);
+      if(!old) return;
+
+      let updated = {
+        name: val("e_name"), product: val("e_product"), content: val("e_content"),
+        qty: val("e_qty"), note: val("e_note"),
+        order: val("e_order") ? new Date(val("e_order")).getTime() : Date.now(),
+        due: val("e_due") ? new Date(val("e_due")).getTime() : "",
+        demo: val("e_demo") ? new Date(val("e_demo")).getTime() : "",
+        price: Number(val("e_price")) || 0, deposit: Number(val("e_deposit")) || 0,
+        status: val("e_status"),
+        checklist: currentChecklist
+      };
+
+      let changes = {};
+      for (let key in updated) {
+        let oldVal = old[key] !== undefined ? old[key] : ""; 
+        if (updated[key] != oldVal) {
+            changes[key] = { old: oldVal, new: updated[key] };
+        }
+      }
+      
+      let newHistory = old.history || [];
+      if (Object.keys(changes).length > 0) {
+        newHistory.push({ time: Date.now(), action: "edit", changes });
+      }
+
+      try {
+        await col.doc(editId).update({ ...updated, history: newHistory });
+        closeModal();
+        toast("Đã lưu thành công", "success");
+        lastFilterKey = "";
+        safeRender();
+
+        if (updated.status === "Xong" && old.status !== "Xong") {
+           openZaloDialog(old.id);
+        }
+      } catch (error) {
+        console.error("Lỗi cập nhật: ", error);
+        toast("Lỗi khi lưu đơn: " + error.message, "error");
+      }
+    }
+
+    function del(id) {
+      showConfirm("⚠️ Bạn có chắc muốn xoá đơn này?", async () => {
+        await col.doc(id).delete();
+        lastFilterKey = ""; safeRender(); toast("🗑 Đã xóa đơn", "warning");
+      });
+    }
+
+    function escapeHtml(str = "") { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+    function getRemainDays(due) {
+      if (!due) return "Chưa có ngày hẹn";
+      let d = new Date(Number(due)); d.setHours(0,0,0,0);
+      let today = new Date(); today.setHours(0,0,0,0);
+      let diff = Math.ceil((d - today) / 86400000);
+      if (diff < 0) return `Đã quá hạn ${Math.abs(diff)} ngày`;
+      if (diff === 0) return "Đến hạn hôm nay";
+      return `Còn ${diff} ngày tới hạn`;
+    }
+
+    /* PUBLIC TRACKING MODE */
+    function checkTrackingMode() {
+      const params = new URLSearchParams(window.location.search);
+      const track = params.get("track");
+      if (!track || !data || data.length === 0) return;
+
+      document.getElementById("mainHeader").style.display = "none";
+      if(document.getElementById("firebaseStatus")) document.getElementById("firebaseStatus").style.display = "none";
+
+      const found = data.find(d => d.code === track);
+      document.querySelector(".container").style.display = "block";
+      
+      if(!found){
+          document.querySelector(".container").innerHTML = `<div class="card" style="max-width:500px;margin:auto;text-align:center;padding:40px"><h2>❌ Không tìm thấy đơn hàng</h2><p style="color:var(--muted);">Vui lòng kiểm tra lại đường link từ Zalo.</p></div>`;
+          return;
+      }
+
+      let progressPercent = found.status === "Chưa Triển Khai" ? "25%" : found.status === "Đang Triển Khai" ? "60%" : found.status === "Xong" ? "90%" : "100%";
+      if (found.checklist && found.checklist.length > 0) {
+        let doneCount = found.checklist.filter(t => t.done).length;
+        progressPercent = Math.round((doneCount / found.checklist.length) * 100) + "%";
+      }
+
+      let checklistHtml = "";
+      if (found.checklist && found.checklist.length > 0) {
+        checklistHtml = `
+          <div class="card" style="margin-top:20px; background:rgba(0,0,0,0.2);">
+            <div style="font-weight:800; margin-bottom:16px; color:#c084fc;">✅ Tiến Độ Các Hạng Mục</div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${found.checklist.map(t => `
+                <div style="display:flex; align-items:center; gap:12px; color:${t.done ? '#4ade80' : '#cbd5e1'}; background:rgba(255,255,255,0.03); padding:10px; border-radius:10px;">
+                  <span style="font-size:20px;">${t.done ? '☑' : '☐'}</span>
+                  <span style="${t.done ? 'text-decoration:line-through; opacity:0.7;' : 'font-weight:600;'}">${escapeHtml(t.text)}</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      document.querySelector(".container").innerHTML = `
+      <div style="max-width:900px;margin:auto;padding:20px">
+        <div class="card" style="padding:32px;border-radius:24px; border:1px solid rgba(124, 58, 237, 0.3); background:linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));">
+          <div style="text-align:center;margin-bottom:30px">
+            <h1 style="margin:0; font-size:28px; font-weight:800; background:var(--primary-grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">📦 THEO DÕI ĐƠN HÀNG</h1>
+            <div style="color:var(--muted); margin-top:8px; font-size:15px;">Mã đơn của bạn: <b style="color:#fff; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px;">${found.code}</b></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+            <div class="card" style="background:rgba(255,255,255,0.03);"><div style="color:var(--muted); font-size:13px; margin-bottom:4px;">👤 Khách hàng</div><div style="font-size:18px;font-weight:800; color:#fff;">${found.name}</div></div>
+            <div class="card" style="background:rgba(255,255,255,0.03);"><div style="color:var(--muted); font-size:13px; margin-bottom:4px;">🏷️ Sản phẩm</div><div style="font-size:18px;font-weight:800; color:#fff;">${found.product}</div></div>
+            <div class="card" style="background:rgba(255,255,255,0.03);"><div style="color:var(--muted); font-size:13px; margin-bottom:4px;">⏰ Ngày hẹn</div><div style="font-size:18px;font-weight:800; color:#fbbf24;">${formatDM(found.due)}</div></div>
+          </div>
+          <div class="card" style="margin-top:20px; background:rgba(0,0,0,0.2);">
+            <div style="color:var(--muted); font-weight:700; margin-bottom:8px;">📝 Nội dung yêu cầu</div>
+            <div style="font-size:16px;line-height:1.6;white-space:pre-wrap; color:#e2e8f0;">${found.content}</div>
+          </div>
+          <div style="margin-top:30px">
+            <div style="font-weight:800;margin-bottom:12px; font-size:16px; color:#fff;">Trạng Thái Tiến Độ</div>
+            <div style="height:16px;background:rgba(0,0,0,0.4);border-radius:999px;overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
+              <div style="height:100%; width:${progressPercent}; background:var(--primary-grad); transition: 1s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+            </div>
+            <div style="margin-top:12px;font-size:20px;font-weight:800;color:#4ade80; text-align:center;">${found.status}</div>
+          </div>
+          ${checklistHtml}
+          <div style="display:flex; justify-content:space-between; gap:12px; margin-top:24px; flex-wrap:wrap;">
+            ${["Chưa Triển Khai", "Đang Triển Khai", "Xong", "Đã Bàn Giao"].map(step=>{
+              const active = ["Chưa Triển Khai","Đang Triển Khai","Xong","Đã Bàn Giao"].indexOf(found.status) >= ["Chưa Triển Khai","Đang Triển Khai","Xong","Đã Bàn Giao"].indexOf(step);
+              return `<div style="flex:1; min-width:150px; text-align:center; padding:16px 12px; border-radius:16px; font-weight:700; font-size:14px; background:${active ? "var(--primary-grad)" : "rgba(255,255,255,0.05)"}; color:${active ? "#fff" : "var(--muted)"}; box-shadow:${active ? "0 8px 20px rgba(124,58,237,0.3)" : "none"};">${active ? "✅" : "⏳"} ${step}</div>`;
+            }).join("")}
+          </div>
+          <div class="card" style="margin-top:20px; background:rgba(34, 197, 94, 0.05); border-color:rgba(34, 197, 94, 0.2);"><div style="font-weight:800; color:#4ade80;">⏱ ${getRemainDays(found.due)}</div></div>
+          <div class="card" style="margin-top:20px; background:rgba(0,0,0,0.2);"><div style="font-weight:800;margin-bottom:8px; color:var(--muted);">📌 Ghi chú từ chúng tôi</div><div style="font-style:italic;">${found.note || "Không có ghi chú"}</div></div>
+          <div style="margin-top:30px;text-align:center">
+            
+          </div>
+          <div style="margin-top:30px"><div style="font-weight:800;margin-bottom:16px; font-size:18px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">🖼 Khung Ảnh Demo / Thực Tế</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+              ${(found.images && found.images.length) ? found.images.map(img=>`<img src="${typeof img==="string"?img:img.url}" style="width:100%; height:auto; max-height:400px; object-fit:contain; background:rgba(0,0,0,0.4); border-radius:16px; border:1px solid rgba(255,255,255,0.1); cursor:pointer; transition:0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="openLightbox('${typeof img==="string"?img:img.url}')">`).join("") : "<div style='color:var(--muted); text-align:center; padding:30px; background:rgba(0,0,0,0.2); border-radius:16px;'>Chưa có ảnh được cập nhật</div>"}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    /* AUTH & UI ALERTS */
+    function getDueStatus(due, status) {
+      if (status === "Đã Bàn Giao") return "normal";
+      if (status === "Xong") return "done";
+      if (!due) return "normal";
+      let today = new Date(); today.setHours(0, 0, 0, 0);
+      let d = new Date(Number(due)); d.setHours(0, 0, 0, 0);
+      let diff = (d - today) / 86400000;
+      if (diff < 0) return "overdue";
+      if (status === "Chưa Triển Khai") return "soon";
+      if (status === "Đang Triển Khai") return "doing";
+      return "normal";
+    }
+
+    function toast(message, type = "info") {
+      const t = document.getElementById("toast");
+      if(!t) return;
+      const icons = { success: "✅", error: "❌", warning: "⚠️", info: "ℹ️" };
+      t.className = "toast " + type;
+      t.innerHTML = `<div class="toast-wrap"><span class="toast-icon">${icons[type]}</span><span>${message}</span></div>`;
+      t.style.display = "block";
+      playSound(type);
+      clearTimeout(t.hideTimer);
+      t.hideTimer = setTimeout(() => { t.style.animation = "toastOut .2s ease forwards"; setTimeout(() => { t.style.display = "none"; t.style.animation = "toastIn .35s ease"; }, 200); }, 2600);
+    }
+
+    function showDuePopup(msg) {
+      let old = document.getElementById("duePopup"); if (old) old.remove();
+      let div = document.createElement("div"); div.id = "duePopup";
+      div.style = `position:fixed; bottom:80px; right:24px; background:rgba(15, 23, 42, 0.9); backdrop-filter:blur(10px); border:1px solid rgba(239, 68, 68, 0.3); padding:16px; border-radius:16px; white-space:pre-line; max-width:320px; z-index:999999; box-shadow:0 15px 40px rgba(0,0,0,0.5); font-weight:600; line-height:1.5;`;
+      div.innerText = msg;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 7000);
+    }
+
+    function checkDueRealtime() {
+      if (!Array.isArray(data) || data.length === 0) return;
+      let today = todayKey();
+      let alerts = [];
+      data.forEach(d => {
+        if (!d.due) return;
+        let currentStatus = getDueStatus(d.due, d.status);
+        let prevStatus = lastStatusMap[d.id];
+        lastStatusMap[d.id] = currentStatus;
+        if (currentStatus !== "overdue") return;
+        if (notifyLog[d.id] === today) return;
+        if (!prevStatus || prevStatus !== "overdue") { alerts.push(d); notifyLog[d.id] = today; }
+      });
+      if (alerts.length === 0) return;
+      let msg = alerts.map(d => `🔴 QUÁ HẠN: ${d.name} (${d.product})`).join("\n");
+      toast("Có đơn chưa hoàn thành cần xử lý!", "warning");
+      showDuePopup(msg);
+    }
+
+    function todayKey() { let d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+
+    async function autoCleanIfOverLimit() {
+      const snapshot = await col.orderBy("order", "desc").get();
+      if (snapshot.size <= 1500) return;
+      const toDelete = snapshot.docs.slice(1500);
+      const batch = db.batch();
+      toDelete.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+
+    function checkDailyAuth() {
+      const params = new URLSearchParams(window.location.search);
+      const pwModal = document.getElementById("pwModal"); 
+      if (params.get("track") || location.hash.startsWith("#/khach-theodoi/")) {
+        canEdit = false; currentUserRole = "guest";
+        if(pwModal) pwModal.style.display = "none";
+        return;
+      }
+      const saved = localStorage.getItem("authDate");
+      const savedRole = localStorage.getItem("authUserRole");
+      if (saved === todayKey() && savedRole) {
+        canEdit = true; currentUserRole = savedRole;
+        if(pwModal) pwModal.style.display = "none";
+        applyRoleUI();
+      } else {
+        canEdit = false; currentUserRole = "guest";
+        if(pwModal) pwModal.style.display = "flex";
+        setTimeout(() => { if(document.getElementById('pinInput')) document.getElementById('pinInput').focus(); }, 500);
+      }
+    }
+
+    // Xử lý tự động kiểm tra PIN (Lock Screen Mới)
+    document.addEventListener("DOMContentLoaded", () => {
+        const pinInput = document.getElementById('pinInput');
+        if (pinInput) {
+            pinInput.oninput = (e) => { 
+                const val = e.target.value;
+                if(val.length === 4) { // Tự động check khi nhập đủ 4 số
+                    if (val === ADMIN_PW || val === STAFF_PW) { 
+                        // Đăng nhập thành công
+                        canEdit = true;
+                        currentUserRole = (val === ADMIN_PW) ? "admin" : "staff";
+                        localStorage.setItem("authDate", todayKey());
+                        localStorage.setItem("authUserRole", currentUserRole);
+                        
+                        const modal = document.getElementById("pwModal");
+                        pinInput.blur(); // Bỏ focus bàn phím
+                        
+                        // Hiệu ứng mờ dần (Fade out)
+                        modal.style.opacity = "1";
+                        let fade = setInterval(() => { 
+                            if (modal.style.opacity > 0) {
+                                modal.style.opacity -= 0.1; 
+                            } else { 
+                                clearInterval(fade); 
+                                modal.style.display = "none"; 
+                                modal.style.opacity = "1"; // Reset lại cho lần sau
+                                pinInput.value = ""; // Xóa mã PIN
+                            } 
+                        }, 20);
+                        
+                        toast(`Mở khóa thành công (${currentUserRole === 'admin' ? 'Quản Lý' : 'Nhân Viên'})`, "success");
+                        applyRoleUI(); 
+                        safeRender();
+                        if (typeof pendingAction === "function") { pendingAction(); pendingAction = null; }
+                        
+                    } else {
+                        // Đăng nhập sai
+                        const err = document.getElementById('pinError');
+                        pinInput.classList.add('pin-shake'); 
+                        err.style.opacity = '1';
+                        
+                        setTimeout(() => { 
+                            pinInput.classList.remove('pin-shake'); 
+                            pinInput.value = ""; 
+                            err.style.opacity = '0'; 
+                            pinInput.focus(); // Tự động trỏ lại chuột để nhập lại
+                        }, 500);
+                        playSound("error");
+                    }
+                }
+            };
+        }
+    });
+
+    function applyRoleUI() {
+      const isAdmin = currentUserRole === 'admin';
+      let style = document.getElementById("roleStyle");
+      if (!style) { style = document.createElement("style"); style.id = "roleStyle"; document.head.appendChild(style); }
+      if (!isAdmin) {
+         style.innerHTML = `.admin-only { display: none !important; }`;
+      } else {
+         style.innerHTML = ``;
+      }
+    }
+
+    function removeVietnamese(str) {
+      str = (str || "").toLowerCase();
+      str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+      str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+      str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+      str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+      str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+      str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+      str = str.replace(/đ/g, "d");
+      return str;
+    }
+
+    function requireAuth(action) {
+      if (canEdit) { action(); return; }
+      pendingAction = action; 
+      if(document.getElementById("pwModal")) {
+          document.getElementById("pwModal").style.display = "flex";
+          setTimeout(() => document.getElementById('pinInput').focus(), 100);
+      }
+    }
+
+    /* IMAGE UPLOAD & PREVIEW */
+    let currentImgId = null;
+    let tempImages = [];
+
+    function openImageModal(id) {
+      currentImgId = id;
+      let d = data.find(x => x.id === id);
+      tempImages = (d.images || []).map(img => typeof img === "string" ? { url: img, path: "" } : img);
+      renderPreview();
+      document.getElementById("imgModal").style.display = "flex";
+    }
+
+    function closeImgModal() { document.getElementById("imgModal").style.display = "none"; }
+
+    function renderPreview() {
+      let box = document.getElementById("imgPreview");
+      box.innerHTML = tempImages.map((img, i) => `
+          <div class="img-item">
+              <img src="${img.url}" loading="lazy" onclick="openLightbox('${img.url}')" style="cursor:pointer">
+              <button class="img-remove" onclick="removeImg(${i})">✕</button>
+              ${img.progress !== undefined ? `<div class="img-progress" style="width:${img.progress}%"></div>` : ""}
+          </div>
+      `).join("");
+    }
+
+    const IMGBB_API_KEY = "334f6143090f73fd6c011a1f73b860c3";
+    async function uploadToImgBB(file) {
+      const formData = new FormData(); formData.append("image", file);
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+      const rdata = await res.json();
+      if (!rdata.success) throw new Error("Upload ImgBB thất bại");
+      return rdata.data.url;
+    }
+
+    function resizeImage(file, maxWidth = 1000) {
+      return new Promise(resolve => {
+        const img = new Image(); const reader = new FileReader();
+        reader.onload = e => img.src = e.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let scale = maxWidth / img.width; if (scale > 1) scale = 1;
+          canvas.width = img.width * scale; canvas.height = img.height * scale;
+          const ctx = canvas.getContext("2d"); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(blob => { resolve(new File([blob], file.name, { type: "image/jpeg" })); }, "image/jpeg", 0.8);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleFiles(files) {
+      if (!currentImgId) return toast("Vui lòng lưu đơn trước", "warning");
+      let tasks = [...files].map(async file => {
+        let temp = { url: URL.createObjectURL(file), progress: 0 };
+        tempImages.push(temp); renderPreview();
+        try {
+          const resized = await resizeImage(file);
+          const url = await uploadToImgBB(resized);
+          temp.url = url; temp.progress = 100;
+        } catch (err) { toast("❌ Upload lỗi", "error"); }
+      });
+      await Promise.all(tasks);
+      await col.doc(currentImgId).update({ images: tempImages });
+      lastFilterKey = ""; safeRender(); renderPreview(); toast("📸 Upload xong", "success");
+    }
+
+    async function removeImg(i) {
+      tempImages.splice(i, 1); renderPreview();
+      await col.doc(currentImgId).update({ images: tempImages });
+      lastFilterKey = ""; safeRender(); toast("🗑 Đã xoá ảnh", "warning");
+    }
+
+    async function saveImages() { await col.doc(currentImgId).update({ images: tempImages }); toast("Đã lưu kho ảnh", "success"); closeImgModal(); }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.getElementById("imgInput");
+      if (dropZone && fileInput) {
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = e => { e.preventDefault(); dropZone.style.background = "rgba(124, 58, 237, 0.15)"; dropZone.style.borderColor = "var(--primary2)"; };
+        dropZone.ondragleave = () => { dropZone.style.background = "rgba(124, 58, 237, 0.05)"; dropZone.style.borderColor = "rgba(124, 58, 237, 0.4)"; };
+        dropZone.ondrop = e => { e.preventDefault(); dropZone.style.background = "rgba(124, 58, 237, 0.05)"; dropZone.style.borderColor = "rgba(124, 58, 237, 0.4)"; handleFiles(e.dataTransfer.files); };
+        fileInput.onchange = e => handleFiles(e.target.files);
+      }
+    });
+
+    document.addEventListener("paste", async (e) => {
+      const imgModal = document.getElementById("imgModal");
+      if (!imgModal || imgModal.style.display !== "flex") return;
+      const items = e.clipboardData.items; let files = [];
+      for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf("image") !== -1) files.push(items[i].getAsFile()); }
+      if (files.length > 0) { handleFiles(files); toast("📋 Đang xử lý dán ảnh", "info"); }
+    });
+
+    /* EXPORT / IMPORT EXCEL */
+    function parseExcelDate(value) {
+      if (!value) return "";
+      if (!isNaN(value)) {
+        if (value < 100000) return new Date((value - 25569) * 86400 * 1000).getTime();
+        return Number(value);
+      }
+      let d = new Date(value); if (!isNaN(d.getTime())) return d.getTime();
+      return "";
+    }
+
+    function exportExcel() {
+      const exportData = data.map((d, i) => {
+        const customerInfo = customers.find(c => c.name === d.name) || {};
+        const imageLinks = (d.images && d.images.length > 0) ? d.images.map(img => typeof img === "string" ? img : img.url).join(", ") : "";
+        return {
+          "STT": i + 1, "Mã Đơn": d.code || "", "Khách Hàng": d.name || "", "SĐT": customerInfo.phone || "", "Địa Chỉ": customerInfo.address || "",
+          "Sản Phẩm": d.product || "", "Nội Dung": d.content || "", "Số Lượng": d.qty || "", "Ghi Chú": d.note || "",
+          "Ngày Đặt": formatFullDate(d.order), "Hẹn Trả": formatFullDate(d.due), "Ngày Demo": formatFullDate(d.demo),
+          "Báo Giá": d.price || 0, "Đã Cọc": d.deposit || 0,
+          "Trạng Thái": d.status || "", "Ảnh Demo": imageLinks
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(exportData); const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "DonHang"); XLSX.writeFile(wb, "quan_ly_don_hang.xlsx"); toast("📤 Đã tải Excel về máy", "success");
+    }
+
+    function formatFullDate(value) {
+      if (!value) return ""; const d = new Date(Number(value));
+      if (isNaN(d.getTime())) return ""; return d.toISOString().split("T")[0];
+    }
+
+    async function importExcel(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const workbook = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+          const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          let added = 0, updated = 0;
+          for (const row of rows) {
+            const newItem = {
+              code: row["Mã Đơn"] || generateOrderCode(), name: row["Khách Hàng"] || "", product: row["Sản Phẩm"] || "Khác", content: row["Nội Dung"] || "",
+              qty: row["Số Lượng"] || "", note: row["Ghi Chú"] || "", order: parseExcelDate(row["Ngày Đặt"]), due: parseExcelDate(row["Hẹn Trả"]),
+              demo: parseExcelDate(row["Ngày Demo"]), price: Number(row["Báo Giá"]) || 0, deposit: Number(row["Đã Cọc"]) || 0, status: row["Trạng Thái"] || "Chưa Triển Khai", images: []
+            };
+            const existed = data.find(d => d.code === row["Mã Đơn"]);
+            if (existed) { await col.doc(existed.id).update(newItem); updated++; } else { await col.add(newItem); added++; }
+          }
+          lastFilterKey = ""; safeRender(); toast(`📥 Import xong | +${added} mới | 🔄 ${updated} cập nhật`, "success"); document.getElementById("excelFile").value = "";
+        } catch (err) { toast("Import file thất bại", "error"); }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+/* --- TÍNH NĂNG XUẤT BÁO GIÁ PDF ĐÃ FIX UI & LOGIC --- */
+function exportPDF(id) {
+    const d = data.find(x => x.id === id);
+    if (!d) return toast("Không tìm thấy đơn hàng", "error");
+
+    const customerInfo = customers.find(c => c.name === d.name) || {};
+    
+    // 1. Nhồi dữ liệu đơn hàng vào Template HTML
+    document.getElementById("invCode").innerText = d.code || "---";
+    document.getElementById("invDate").innerText = new Date().toLocaleDateString("vi-VN");
+    document.getElementById("invCusName").innerText = d.name || "---";
+    document.getElementById("invCusPhone").innerText = customerInfo.phone || "---";
+    document.getElementById("invCusAddr").innerText = customerInfo.address || "---";
+    document.getElementById("invProduct").innerText = d.product || "---";
+    
+    // GỘP NỘI DUNG & GHI CHÚ
+    let fullContent = d.content || "---";
+    if (d.note && d.note.trim() !== "") {
+        fullContent += `\n\n📌 Ghi chú: ${d.note}`;
+    }
+    document.getElementById("invContent").innerText = fullContent;
+    
+    //document.getElementById("invQty").innerText = d.qty || "1";
+    
+    let price = Number(d.price) || 0;
+    let deposit = Number(d.deposit) || 0;
+    let debt = price - deposit;
+    
+    // FORMAT TIỀN TỆ CHUẨN (Nhân 1000 vì giá trị gốc đang lưu là hàng nghìn - K)
+    const fmt = (num) => (num * 1000).toLocaleString("vi-VN");
+    document.getElementById("invPrice").innerText = fmt(price) + " VNĐ";
+    document.getElementById("invTotal").innerText = fmt(price) + " VNĐ";
+    document.getElementById("invDeposit").innerText = fmt(deposit) + " VNĐ";
+    document.getElementById("invDebt").innerText = fmt(debt) + " VNĐ";
+
+    // 2. TẠO LỚP WRAPPER TRẮNG ÉP CỐ ĐỊNH TẠI GÓC TRÁI TRÊN CÙNG MÀN HÌNH (0,0)
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:#ffffff; z-index:9999998; overflow:hidden;';
+    
+    // Nhân bản template và dán vào wrapper
+    const template = document.getElementById('invoiceTemplate');
+    const clone = template.cloneNode(true);
+    clone.id = 'pdfClone';
+    clone.style.display = 'block';     
+    clone.style.position = 'relative'; 
+    clone.style.margin = '0';          
+    clone.style.top = '0';
+    clone.style.left = '0';
+    
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
+    // 3. TẠO MÀN HÌNH LOADING ĐEN CHE LÊN TRÊN CÙNG 
+    const loader = document.createElement('div');
+    loader.style.cssText = 'position:fixed; inset:0; background:rgba(2, 6, 23, 0.95); z-index:9999999; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#fff;';
+    loader.innerHTML = '<div style="font-size:36px; margin-bottom:12px; animation: pulse 1s infinite;">⏳</div><h3 style="margin:0;">Đang căn chỉnh và xuất PDF...</h3>';
+    document.body.appendChild(loader);
+
+    // 4. CẤU HÌNH PDF CHỈ ĐỊNH RÕ TỌA ĐỘ
+    const opt = {
+        margin:       10,
+        filename:     `Bao_Gia_${d.code}.pdf`,
+        image:        { type: 'jpeg', quality: 1 },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true,
+            scrollY: 0, 
+            scrollX: 0 
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // 5. CHỤP BẢN SAO VÀ DỌN DẸP
+    setTimeout(() => {
+        html2pdf().set(opt).from(clone).save().then(() => {
+            document.body.removeChild(wrapper);
+            document.body.removeChild(loader);
+            toast("✅ Đã xuất Báo Giá PDF thành công!", "success");
+        }).catch(err => {
+            document.body.removeChild(wrapper);
+            document.body.removeChild(loader);
+            toast("❌ Lỗi khi xuất PDF", "error");
+            console.error(err);
+        });
+    }, 500); 
+}
+
+
+    /* HISTORY & CONFIRM MODALS */
+    function viewHistory(id) {
+      let d = data.find(x => x.id === id);
+      if (!d.history || d.history.length === 0) return toast("Chưa có lịch sử thao tác", "info");
+      let html = d.history.slice().reverse().map(h => {
+        let time = new Date(h.time).toLocaleString("vi-VN");
+        if (h.action === "create") return `<div style="padding:8px 0;">🟢 <b style="color:#e2e8f0;">Tạo đơn mới</b> <div style="font-size:11px; color:var(--muted);">${time}</div></div>`;
+        if (h.action === "edit") {
+          let changes = Object.keys(h.changes).map(k => `<div style="padding-left:20px; font-size:13px; color:#cbd5e1;">• ${k}: <span style="text-decoration:line-through; opacity:0.6;">${h.changes[k].old}</span> ➔ <b style="color:var(--primary2);">${h.changes[k].new}</b></div>`).join("");
+          return `<div style="padding:8px 0;">✏️ <b style="color:#e2e8f0;">Chỉnh sửa thông tin</b> <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">${time}</div>${changes}</div>`;
+        }
+        if (h.action === "delete") return `<div style="padding:8px 0;">🔴 <b style="color:#e2e8f0;">Xoá đơn</b> <div style="font-size:11px; color:var(--muted);">${time}</div></div>`;
+      }).join("<div style='height:1px; background:rgba(255,255,255,0.05); margin:4px 0;'></div>");
+      
+      let old = document.getElementById("historyPopup"); if (old) old.remove();
+      let div = document.createElement("div"); div.id = "historyPopup";
+      div.style = `position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(15px); padding:24px; border-radius:24px; max-width:500px; width:90%; max-height:75vh; overflow:auto; z-index:999999; border:1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5);`;
+      div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px; margin-bottom:12px;"><b style="font-size:16px;">📜 LỊCH SỬ THAO TÁC</b><button onclick="this.parentElement.parentElement.remove()" style="background:transparent; color:#ef4444; border:none; font-size:16px; box-shadow:none;">✕</button></div>${html}`;
+      document.body.appendChild(div);
+    }
+
+    function logout() { 
+        showConfirm("Đăng xuất khỏi hệ thống?", () => {
+            localStorage.removeItem("authDate"); localStorage.removeItem("authUserRole"); location.reload(); 
+        });
+    }
+
+    let confirmCallback = null;
+    function showConfirm(message, onOk) {
+      document.getElementById("confirmMessage").innerText = message;
+      confirmCallback = onOk;
+      document.getElementById("confirmModal").style.display = "flex";
+    }
+    function closeConfirm() { document.getElementById("confirmModal").style.display = "none"; }
+    
+    document.addEventListener("DOMContentLoaded", () => {
+        const btnOk = document.getElementById("confirmOkBtn");
+        if(btnOk) btnOk.onclick = () => { if (confirmCallback) confirmCallback(); closeConfirm(); };
+    });
+
+    /* CUSTOMER SYSTEM */
+    async function syncCustomersFromOrders() {
+      try {
+        toast("⏳ Đang quét và đồng bộ...", "info");
+        const names = [...new Set(data.map(d => d.name).filter(Boolean))];
+        for (const name of names) {
+          const q = await customerCol.where("name", "==", name).get();
+          if (q.empty) await customerCol.add({ code: generateCustomerCode(), name, phone: "", address: "", note: "", createdAt: Date.now(), updatedAt: Date.now() });
+        }
+        const allCust = await customerCol.get(); const batch = db.batch(); let count = 0;
+        allCust.docs.forEach(doc => { if (!doc.data().code) { batch.update(customerCol.doc(doc.id), { code: generateCustomerCode() }); count++; } });
+        if (count > 0) await batch.commit();
+        toast("✅ Đã đồng bộ khách hàng và bảo toàn mã!", "success");
+      } catch (error) { toast("Lỗi hệ thống khi đồng bộ!", "error"); }
+    }
+
+    function renderCustomerList() {
+      const box = document.getElementById("customerListView");
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px; background:var(--bg-card); padding:20px; border-radius:20px; border:1px solid var(--line);">
+          <h3 style="margin:0; font-size:20px; font-weight:800;">👥 QUẢN LÝ KHÁCH HÀNG <span id="customerCount" style="color:var(--primary2);">(${customers.length})</span></h3>
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <div style="position:relative;">
+                <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:0.5;">🔍</span>
+                <input type="text" id="searchCustomer" placeholder="Tìm tên, SĐT, mã KH..." style="padding-left:36px; width: 250px;" oninput="handleCustomerSearch()">
+            </div>
+            <button onclick="addNewCustomer()" style="background:var(--success); color:#000;">+ Thêm Khách</button>
+            <button onclick="syncCustomersFromOrders()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">🔄 Quét Đồng Bộ</button>
+          </div>
+        </div>
+        <div id="customerCardsContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(350px, 1fr)); gap:16px;"></div>
+      `;
+      renderCustomerCards(customers);
+    }
+
+    function handleCustomerSearch() {
+      const keyword = document.getElementById("searchCustomer").value;
+      const searchStr = removeVietnamese(keyword).toLowerCase();
+      const filtered = customers.filter(c => removeVietnamese(c.name || "").toLowerCase().includes(searchStr) || (c.phone || "").includes(searchStr) || (c.code || "").toLowerCase().includes(searchStr));
+      renderCustomerCards(filtered);
+    }
+
+    function renderCustomerCards(list) {
+      const container = document.getElementById("customerCardsContainer");
+      if(document.getElementById("customerCount")) document.getElementById("customerCount").innerText = `(${list.length})`;
+      if (list.length === 0) { container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--muted); margin-top:40px;">Không tìm thấy khách hàng nào trên hệ thống.</p>'; return; }
+      container.innerHTML = list.map(c => {
+        const hisOrders = data.filter(o => o.name === c.name);
+        const totalOrder = hisOrders.length;
+        const totalMoney = hisOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+        return `
+          <div class="customer-card-glass">
+            <div style="flex:1;">
+              <b style="font-size:16px; color:#fff;">👤 ${escapeHtml(c.name || "Không tên")}</b>
+              <span style="font-size:11px; background:rgba(0,0,0,0.3); padding:2px 6px; border-radius:6px; margin-left:6px; color:var(--primary2);">${c.code || "N/A"}</span>
+              <div style="font-size:13px; color:var(--muted); margin-top:8px; display:flex; flex-direction:column; gap:4px;">
+                <span>📞 ${escapeHtml(c.phone || 'Chưa có SĐT')}</span>
+                <span>📍 ${c.address ? escapeHtml(c.address.substring(0, 25)) + '...' : 'Chưa có địa chỉ'}</span>
+                <span>📦 <b>${totalOrder}</b> đơn hàng đã đặt</span>
+                <span class="admin-only" style="color:#4ade80;">💰 Đã chi: <b>${totalMoney.toLocaleString()}K</b> vnđ</span>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap: 8px;">
+              <button onclick="go('/khach-theodoi/${c.code || c.id}')" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #000; font-size:12px;">📈 Theo dõi</button>
+              <button onclick="go('/khach/${c.code || c.id}')" style="background:rgba(255,255,255,0.1); font-size:12px;">✏️ Chi tiết</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderCustomerDetail(code) {
+      if (customers.length === 0) return document.getElementById("customerDetailView").innerHTML = `<div style="text-align:center; padding:50px; color:var(--muted);">⏳ Hệ thống đang truy xuất...</div>`;
+      const customer = customers.find(x => x.code === code || x.id === code);
+      if (!customer) return document.getElementById("customerDetailView").innerHTML = `<div class="card" style="text-align:center; padding:50px;"><h2>❌ KHÔNG TÌM THẤY HỒ SƠ</h2><button onclick="go('/khach')">Trở lại Danh Sách</button></div>`;
+
+      const hisOrders = data.filter(d => d.name === customer.name);
+      const totalSpent = hisOrders.reduce((sum, d) => sum + (Number(d.price) || 0), 0);
+      const unpaidOrders = hisOrders.filter(d => d.status !== "Đã Bàn Giao").length;
+
+      document.getElementById("customerDetailView").innerHTML = `
+        <div style="position:relative;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background:var(--bg-card); padding:16px 24px; border-radius:20px; border:1px solid var(--line);">
+            <button onclick="go('/khach')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">⬅ Quay lại</button>
+            <h2 style="margin:0; font-size:18px;">HỒ SƠ: <span style="color:var(--primary2)">${customer.code || ''}</span></h2>
+            <button onclick="syncCustomersFromOrders()" style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: white;">🔄 Làm mới dữ liệu</button>
+          </div>
+          <div class="grid2" style="margin-bottom:24px;">
+            <div class="card" style="background: rgba(30,41,59,0.5);">
+              <div style="font-weight:800; margin-bottom:16px; color:#fff;">👤 Chỉnh sửa thông tin cá nhân</div>
+              <label>Tên khách hàng</label><input id="c_edit_name" value="${escapeHtml(customer.name || '')}" style="width:100%; margin-bottom:12px;">
+              <label>Số điện thoại Zalo / Gọi</label><input id="c_edit_phone" value="${escapeHtml(customer.phone || '')}" placeholder="08543xxxxx" style="width:100%; margin-bottom:12px;">
+              <label>Địa chỉ nhận hàng</label><textarea id="c_edit_address" style="width:100%; height:80px;">${escapeHtml(customer.address || '')}</textarea>
+              <div style="display:flex; gap:12px; margin-top:20px;">
+                <button onclick="updateCustomerInfo('${customer.id}')" style="flex:2; font-size:15px;">💾 Lưu Thông Tin</button>
+                <button onclick="deleteCustomer('${customer.id}')" style="flex:1; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.3); box-shadow:none;">🗑 Xóa Hồ Sơ</button>
+              </div>
+            </div>
+            
+            <div class="card" style="background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.9)); border: 1px solid rgba(124, 58, 237, 0.3);">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px;"><span style="font-size: 24px;">📊</span><h3 style="margin: 0; color: #c084fc; font-weight: 800;">Tổng Quan Hợp Tác</h3></div>
+              <div class="admin-only" style="display: flex; justify-content: space-between; align-items:center; background:rgba(34, 197, 94, 0.1); padding:12px 16px; border-radius:12px; margin-bottom: 12px; font-weight: 700;"><span style="color: #4ade80;">💰 Tổng đã chi tiêu:</span><b style="color: #4ade80; font-size:18px;">${totalSpent.toLocaleString()}K vnđ</b></div>
+              <div style="display: flex; justify-content: space-between; align-items:center; background:rgba(255,255,255,0.05); padding:12px 16px; border-radius:12px; margin-bottom: 12px; font-weight: 700;"><span style="color: #e5e7eb;">📦 Tổng đơn đã đặt:</span><b style="color: #ffffff; font-size:18px;">${hisOrders.length}</b></div>
+              <div style="display: flex; justify-content: space-between; align-items:center; background:rgba(245, 158, 11, 0.1); padding:12px 16px; border-radius:12px; margin-bottom: 24px; font-weight: 700;"><span style="color: #fbbf24;">⏳ Đơn đang xử lý:</span><b style="color: #fbbf24; font-size:18px;">${unpaidOrders}</b></div>
+              <a href="${customer.phone ? 'https://zalo.me/' + customer.phone : '#'}" target="_blank" style="display: flex; align-items: center; justify-content: center; padding: 16px; background: #0068ff; border-radius: 16px; text-decoration: none; color: white; font-weight: 800; font-size:15px; box-shadow: 0 4px 15px rgba(0, 104, 255, 0.4); transition:0.2s;">💬 Chuyển Hướng Zalo Khách</a>
+            </div>
+          </div>
+          
+          <div class="card" style="padding:4px;">
+              <h3 style="margin:20px; color:var(--text); font-weight:800;">📋 LỊCH SỬ GIAO DỊCH</h3>
+              <div class="table-wrap" style="box-shadow:none; border:none; background:transparent;">
+                <table style="width:100%;">
+                  <thead><tr><th style="width:15%;">Mã Đơn</th><th style="width:25%;">Thời Gian</th><th style="width:20%;">Sản Phẩm</th><th class="admin-only" style="width:15%;">Giá Trị</th><th style="width:25%; text-align:center;">Trạng Thái</th></tr></thead>
+                  <tbody>
+                    ${hisOrders.map(o => {
+                        let sc = "st-new"; if(o.status==="Đang Triển Khai") sc="st-doing"; if(o.status==="Xong") sc="st-done"; if(o.status==="Đã Bàn Giao") sc="st-delivered";
+                        return `<tr class="${getDueStatus(o.due, o.status)}"><td><b style="color:#fff;">${o.code || '---'}</b></td><td style="color:var(--muted);">${formatDM(o.order)} ➔ <b style="color:#fbbf24;">${formatDM(o.due)}</b></td><td>${o.product}</td><td class="admin-only" style="font-weight:700;">${(Number(o.price) || 0).toLocaleString()}K</td><td style="text-align:center;"><span class="status-badge ${sc}">${o.status}</span></td></tr>`
+                    }).join("")}
+                    ${hisOrders.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">Khách hàng chưa có lịch sử mua hàng</td></tr>' : ''}
+                  </tbody>
+                </table>
+              </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCustomerTracking(code) {
+      if (customers.length === 0) return document.getElementById("customerTrackingView").innerHTML = `<div style="text-align:center; padding:50px; color:var(--muted);">⏳ Đang tải dữ liệu...</div>`;
+      const customer = customers.find(x => x.code === code || x.id === code);
+      if (!customer) return document.getElementById("customerTrackingView").innerHTML = `<div class="card" style="text-align:center; padding:30px;"><h2>❌ Không tìm thấy khách hàng!</h2></div>`;
+
+      const activeOrders = data.filter(d => d.name === customer.name && d.status !== "Đã Bàn Giao");
+      const allOrders = data.filter(d => d.name === customer.name);
+
+      const totalSpent = allOrders.reduce((sum, d) => sum + (Number(d.price) || 0), 0);
+      const unpaidOrders = activeOrders.length;
+
+      let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background:var(--bg-card); padding:16px 24px; border-radius:20px; border:1px solid var(--line); flex-wrap:wrap; gap:16px;">
+          <button onclick="go('/')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">🏠 Bảng Trực Quan</button>
+          <h2 style="margin:0; font-size:20px;">📦 THEO DÕI: <span style="background:var(--primary-grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:900;">${escapeHtml(customer.name).toUpperCase()}</span></h2>
+          <button onclick="syncCustomersFromOrders()" style="background:rgba(255,255,255,0.05);">🔄 Làm mới</button>
+        </div>
+        
+        <div class="card" style="background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.9)); border: 1px solid rgba(124, 58, 237, 0.3); margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+            <span style="font-size: 24px; background:rgba(255,255,255,0.1); padding:8px; border-radius:12px;">📊</span>
+            <h3 style="margin: 0; color: #fff; font-weight: 800;">Tiến Độ Hợp Tác Hiện Tại</h3>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
+              <div class="admin-only" style="background:rgba(34, 197, 94, 0.1); border:1px solid rgba(34, 197, 94, 0.2); padding:16px; border-radius:16px;">
+                <div style="color: #4ade80; font-size:13px; font-weight:700; margin-bottom:8px;">TỔNG GIÁ TRỊ GIAO DỊCH</div>
+                <div style="color: #4ade80; font-size:24px; font-weight:900;">${totalSpent.toLocaleString()}K <span style="font-size:14px; font-weight:600;">vnđ</span></div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); padding:16px; border-radius:16px;">
+                <div style="color: var(--muted); font-size:13px; font-weight:700; margin-bottom:8px;">TỔNG ĐƠN ĐÃ ĐẶT</div>
+                <div style="color: #fff; font-size:24px; font-weight:900;">${allOrders.length} <span style="font-size:14px; font-weight:600; color:var(--muted);">đơn</span></div>
+              </div>
+              <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.2); padding:16px; border-radius:16px;">
+                <div style="color: #fbbf24; font-size:13px; font-weight:700; margin-bottom:8px;">ĐƠN ĐANG TRIỂN KHAI</div>
+                <div style="color: #fbbf24; font-size:24px; font-weight:900;">${unpaidOrders} <span style="font-size:14px; font-weight:600;">đơn</span></div>
+              </div>
+          </div>
+          <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+             <a href="${customer.phone ? 'https://zalo.me/' + customer.phone : '#'}" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; padding: 12px 24px; background: #0068ff; border-radius: 12px; text-decoration: none; color: white; font-weight: 700; font-size:14px;"><span style="margin-right:8px; font-size:18px;">💬</span> Gửi tin báo cáo qua Zalo</a>
+          </div>
+        </div>
+      `;
+
+      if (activeOrders.length === 0) {
+        html += `<div class="card" style="text-align:center; padding:60px 20px; margin-bottom:24px; background:rgba(0,0,0,0.2); border:2px dashed rgba(255,255,255,0.1);"><h3 style="color:var(--muted)">🎉 Khách hàng này đã hoàn tất toàn bộ đơn hàng!</h3></div>`;
+      } else {
+        html += activeOrders.map(found => {
+          let progressWidth = found.status === "Chưa Triển Khai" ? "25%" : found.status === "Đang Triển Khai" ? "60%" : found.status === "Xong" ? "90%" : "100%";
+          if (found.checklist && found.checklist.length > 0) {
+            let doneCount = found.checklist.filter(t => t.done).length;
+            progressWidth = Math.round((doneCount / found.checklist.length) * 100) + "%";
+          }
+          
+          let checklistHtml = "";
+          if (found.checklist && found.checklist.length > 0) {
+            checklistHtml = `<div class="card" style="margin-top:16px; background:rgba(0,0,0,0.3); padding:16px; border:1px solid rgba(255,255,255,0.05);"><div style="font-weight:800; margin-bottom:12px; font-size:14px; color:#e2e8f0;">✅ Chi Tiết Các Hạng Mục</div><div style="display:flex; flex-direction:column; gap:8px;">${found.checklist.map(t => `<div style="display:flex; align-items:center; gap:10px; font-size:14px; color:${t.done ? '#4ade80' : '#94a3b8'}; background:rgba(255,255,255,0.02); padding:8px 12px; border-radius:8px;"><span>${t.done ? '☑' : '☐'}</span><span style="${t.done ? 'text-decoration:line-through; opacity:0.6' : 'font-weight:600'}">${escapeHtml(t.text)}</span></div>`).join("")}</div></div>`;
+          }
+
+          const stepsHtml = ["Chưa Triển Khai", "Đang Triển Khai", "Xong", "Đã Bàn Giao"].map(step => {
+            const active = ["Chưa Triển Khai", "Đang Triển Khai", "Xong", "Đã Bàn Giao"].indexOf(found.status) >= ["Chưa Triển Khai", "Đang Triển Khai", "Xong", "Đã Bàn Giao"].indexOf(step);
+            return `<div style="flex:1; min-width:130px; text-align:center; padding:12px; border-radius:12px; font-size:13px; font-weight:700; transition:0.3s; background:${active ? "var(--primary-grad)" : "rgba(255,255,255,0.05)"}; color:${active ? "#fff" : "var(--muted)"};">${active ? "✅" : "⏳"} ${step}</div>`;
+          }).join("");
+          
+          // SỬA LỖI HIỂN THỊ ẢNH DEMO Ở ĐÂY: object-fit: contain và background mờ
+          const imagesHtml = (found.images && found.images.length) ? found.images.map(img => `<img src="${typeof img==="string"?img:img.url}" style="width:100%; height:auto; max-height:400px; object-fit:contain; background:rgba(0,0,0,0.4); border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.1);" onclick="openLightbox('${typeof img==="string"?img:img.url}')">`).join("") : "<div style='color:var(--muted); text-align:center; padding:20px; background:rgba(0,0,0,0.2); border-radius:12px;'>Kỹ thuật chưa up ảnh</div>";
+
+          return `
+            <div class="card" style="padding:24px; border-radius:24px; margin-bottom:24px; border: 1px solid rgba(124, 58, 237, 0.4); background: linear-gradient(145deg, rgba(30,41,59,0.5), rgba(15,23,42,0.8)); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:16px;">
+                  <div style="color:var(--muted); font-size:14px; font-weight:600;">Mã đơn: <b style="color:#fff; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px; letter-spacing:1px;">${found.code || '---'}</b></div>
+                  <div style="background:rgba(245, 158, 11, 0.1); color:#fbbf24; padding:6px 12px; border-radius:8px; font-size:13px; font-weight:800; border:1px solid rgba(245, 158, 11, 0.2);">⏰ Deadline: ${formatDM(found.due)}</div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px">
+                <div class="card" style="background:rgba(0,0,0,0.2); padding:16px; border:none;"><div style="color:var(--muted); font-size:12px; font-weight:700; margin-bottom:6px; text-transform:uppercase;">Phân Loại</div><div style="font-size:18px; font-weight:800; color:#fff;">${found.product}</div></div>
+                <div class="card" style="background:rgba(0,0,0,0.2); padding:16px; border:none; grid-column: 1 / -1;"><div style="color:var(--muted); font-size:12px; font-weight:700; margin-bottom:6px; text-transform:uppercase;">Nội Dung Yêu Cầu</div><div style="font-size:15px; line-height:1.6; white-space:pre-wrap; color:#e2e8f0;">${found.content || '---'}</div></div>
+              </div>
+              <div style="margin-top:24px">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
+                      <div style="font-weight:800; font-size:14px; text-transform:uppercase; color:var(--muted);">Tiến Trình Xử Lý</div>
+                      <div style="font-size:20px; font-weight:900; color:#4ade80">${found.status}</div>
+                  </div>
+                  <div style="height:12px; background:rgba(0,0,0,0.5); border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,0.05); box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);">
+                      <div style="height:100%; width:${progressWidth}; background:var(--primary-grad); transition:1s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+                  </div>
+              </div>
+              ${checklistHtml}
+              <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">${stepsHtml}</div>
+              
+              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; margin-top:20px;">
+                  <div class="card" style="background:rgba(0,0,0,0.2); padding:16px; border:none;"><div style="font-weight:800; margin-bottom:8px; font-size:13px; color:var(--muted); text-transform:uppercase;">📌 Ghi chú nội bộ</div><div style="font-size:14px; color:#cbd5e1; font-style:italic;">${found.note || "Trống"}</div></div>
+                  <div class="card" style="background:rgba(34, 197, 94, 0.05); padding:16px; border:1px solid rgba(34, 197, 94, 0.2); display:flex; align-items:center; justify-content:center;"><div style="font-weight:800; font-size:16px; color:#4ade80;">⏳ ${getRemainDays(found.due)}</div></div>
+              </div>
+              <div style="margin-top:24px"><div style="font-weight:800; margin-bottom:12px; font-size:15px; color:#fff; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">🖼 File Thiết Kế / Demo</div><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;">${imagesHtml}</div></div>
+            </div>`;
+        }).join("");
+      }
+      
+      html += `
+        <div class="card" style="margin-top: 32px; background: rgba(15,23,42,0.4); padding:4px;">
+          <h3 style="margin:20px; color:#fff; text-align:center; font-weight:800;">📋 BẢNG LỊCH SỬ GIAO DỊCH CŨ</h3>
+          <div class="table-wrap" style="border:none; box-shadow:none; background:transparent;">
+            <table style="width:100%;">
+              <thead>
+                <tr><th style="width:15%;">Mã Đơn</th><th style="width:25%;">Thời Gian</th><th style="width:20%;">Sản Phẩm</th><th class="admin-only" style="width:15%;">Báo Giá</th><th style="width:25%; text-align:center;">Trạng Thái</th></tr>
+              </thead>
+              <tbody>
+                ${allOrders.map(o => {
+                    let sc = "st-new"; if(o.status==="Đang Triển Khai") sc="st-doing"; if(o.status==="Xong") sc="st-done"; if(o.status==="Đã Bàn Giao") sc="st-delivered";
+                    return `<tr class="${getDueStatus(o.due, o.status)}"><td><b style="color:#fff;">${o.code || '---'}</b></td><td style="color:var(--muted);">${formatDM(o.order)} ➔ <b style="color:#fbbf24;">${formatDM(o.due)}</b></td><td>${o.product}</td><td class="admin-only" style="font-weight:700;">${(Number(o.price) || 0).toLocaleString()}K</td><td style="text-align:center;"><span class="status-badge ${sc}">${o.status}</span></td></tr>`
+                }).join("")}
+                ${allOrders.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">Chưa có đơn hàng nào</td></tr>' : ''}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("customerTrackingView").innerHTML = html;
+    }
+
+    async function addNewCustomer() {
+      const name = prompt("Nhập tên khách hàng mới:"); if (!name) return;
+      if (customers.find(c => c.name.toLowerCase() === name.trim().toLowerCase())) return toast("Khách hàng này đã tồn tại!", "warning");
+      try { await customerCol.add({ code: generateCustomerCode(), name: name.trim(), phone: "", address: "", note: "", createdAt: Date.now(), updatedAt: Date.now() }); toast("Đã thêm khách hàng mới", "success"); } catch (err) { toast("Lỗi khi thêm khách", "error"); }
+    }
+
+    async function updateCustomerInfo(id) {
+      try { await customerCol.doc(id).update({ name: val("c_edit_name"), phone: val("c_edit_phone"), address: val("c_edit_address"), updatedAt: Date.now() }); toast("Đã cập nhật thông tin khách", "success"); } catch (err) { toast("Lỗi khi lưu dữ liệu", "error"); }
+    }
+
+    function deleteCustomer(id) {
+      const customer = customers.find(c => c.id === id); if (!customer) return;
+      showConfirm(`⚠️ Bạn có chắc muốn xóa khách "${customer.name}"? Việc này không xóa đơn hàng cũ nhưng sẽ mất thông tin liên lạc.`, async () => {
+        try { await customerCol.doc(id).delete(); toast("🗑 Đã xóa khách hàng", "warning"); go('/khach'); } catch (err) { toast("Lỗi khi xóa", "error"); }
+      });
+    }
+
+    /* ROUTER */
+    function go(path) { location.hash = path; }
+    function goToCustomerDetail(customerName) {
+      const customer = customers.find(c => c.name === customerName);
+      if (customer) go('/khach/' + (customer.code || customer.id)); else toast("Vui lòng bấm 'Quét Đồng Bộ' ở tab Khách Hàng!", "warning");
+    }
+
+    function renderRoute() {
+      const path = location.hash.replace("#", "") || "/";
+      document.getElementById("orderView").style.display = "none";
+      document.getElementById("customerListView").style.display = "none";
+      document.getElementById("customerDetailView").style.display = "none";
+      document.getElementById("customerTrackingView").style.display = "none";
+
+      const headerObj = document.getElementById("mainHeader");
+      const logoutBtn = document.getElementById("btnLogout");
+      const fbStatus = document.getElementById("firebaseStatus");
+
+      checkDailyAuth();
+
+      if (headerObj) headerObj.style.display = "block";
+      if (logoutBtn) logoutBtn.style.display = "flex";
+      if (fbStatus) fbStatus.style.display = "flex";
+
+      if (path === "/khach") {
+        document.title = "Quản Lý Khách Hàng - GPT Tuấn Nguyễn"; document.getElementById("customerListView").style.display = "block"; renderCustomerList();
+      } else if (path.startsWith("/khach-theodoi/")) {
+        document.title = "Theo Dõi Đơn - GPT Tuấn Nguyễn";
+        if (headerObj) headerObj.style.display = "none"; if (logoutBtn) logoutBtn.style.display = "none"; if (fbStatus) fbStatus.style.display = "none";
+        document.getElementById("customerTrackingView").style.display = "block"; renderCustomerTracking(path.split("/")[2]);
+      } else if (path.startsWith("/khach/")) {
+        document.title = "Chi tiết Khách Hàng"; document.getElementById("customerDetailView").style.display = "block"; renderCustomerDetail(path.split("/")[2]);
+      } else {
+        document.title = "Quản Lý Đơn - GPT Tuấn Nguyễn"; document.getElementById("orderView").style.display = "block";
+      }
+    }
+
+    window.addEventListener("hashchange", renderRoute);
+    window.addEventListener("load", () => {
+       const saved = localStorage.getItem("authDate");
+       const savedRole = localStorage.getItem("authUserRole");
+       if (saved === todayKey() && savedRole) {
+           canEdit = true;
+           currentUserRole = savedRole;
+           applyRoleUI();
+       } else {
+           checkDailyAuth();
+       }
+       renderRoute();
+    });
+
+    /* BACKUP & RESTORE TỪ FILE LOCAL VÀ HIỆN THÔNG BÁO TỔNG QUÁT */
+    async function createBackup() {
+      try {
+        toast("⏳ Đang thu thập dữ liệu sao lưu...", "info");
+        
+        const ordersSnap = await col.get(); 
+        const ordersBackup = ordersSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+        
+        const customersSnap = await customerCol.get(); 
+        const customersBackup = customersSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+        
+        const backupData = { 
+          timestamp: Date.now(), 
+          date: new Date().toLocaleString("vi-VN"), 
+          totalOrders: ordersBackup.length, 
+          totalCustomers: customersBackup.length, 
+          orders: ordersBackup, 
+          customers: customersBackup 
+        };
+        
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a"); 
+        
+        a.href = downloadUrl; 
+        a.download = `Backup_GPT_TuanNguyen_${new Date().getTime()}.json`;
+        document.body.appendChild(a); 
+        a.click(); 
+        document.body.removeChild(a); 
+        URL.revokeObjectURL(downloadUrl);
+        
+        toast(`Đã tải file Backup về máy! (${ordersBackup.length} đơn, ${customersBackup.length} khách)`, "success");
+
+      } catch (err) { 
+        toast("Lỗi khi tạo sao lưu: " + err.message, "error"); 
+      }
+    }
+    
+    async function processRestoreFile(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const backupData = JSON.parse(e.target.result);
+          if (!backupData.orders || !backupData.customers) throw new Error("File JSON không hợp lệ.");
+          showConfirm(`Khôi phục từ bản Backup ngày ${backupData.date}? Hệ thống sẽ CHỈ THÊM các đơn và khách hàng chưa tồn tại.`, async () => {
+            toast("⏳ Đang xử lý khôi phục...", "warning");
+            let addedOrders = 0; let addedCustomers = 0;
+            for (const o of backupData.orders) {
+              if (!data.some(d => d.code === o.code)) { const docData = { ...o }; delete docData.docId; await col.add(docData); addedOrders++; }
+            }
+            for (const c of backupData.customers) {
+              if (!customers.some(existingC => existingC.code === c.code || existingC.name === c.name)) { const docData = { ...c }; delete docData.docId; await customerCol.add(docData); addedCustomers++; }
+            }
+            if (addedOrders > 0 || addedCustomers > 0) toast(`Khôi phục thành công! Đã thêm mới ${addedOrders} đơn, ${addedCustomers} khách.`, "success");
+            else toast(`Toàn bộ dữ liệu trong file đã tồn tại trên hệ thống.`, "info");
+            document.getElementById('backupFile').value = "";
+          });
+        } catch (err) { toast("Lỗi đọc file: " + err.message, "error"); document.getElementById('backupFile').value = ""; }
+      };
+      reader.readAsText(file);
+    }
+
+    /* --- TÍNH NĂNG BIỂU ĐỒ & CHECKLIST --- */
+    let currentChecklist = [];
+    let revenueChart, statusChart;
+
+    function renderChecklistEdit() {
+      const box = document.getElementById("e_checklist_box");
+      if (!currentChecklist || currentChecklist.length === 0) {
+        box.innerHTML = `<div style="color:var(--muted); font-size:13px; text-align:center; padding:10px;">Chưa có mục nào. Hãy thêm bên dưới.</div>`;
+        return;
+      }
+      box.innerHTML = currentChecklist.map((task, i) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); transition:0.2s;">
+          <label style="margin:0; display:flex; align-items:center; gap:12px; color:${task.done ? '#4ade80' : '#f8fafc'}; cursor:pointer; font-size:14px;">
+            <input type="checkbox" style="width:18px; height:18px; accent-color:var(--primary);" ${task.done ? 'checked' : ''} onchange="toggleTask(${i})">
+            <span style="${task.done ? 'text-decoration:line-through; opacity: 0.5' : ''}">${escapeHtml(task.text)}</span>
+          </label>
+          <button onclick="removeTask(${i})" style="background:rgba(239, 68, 68, 0.1); color:#ef4444; border-radius:8px; padding:6px; box-shadow:none; cursor:pointer; font-size: 14px;">✕</button>
+        </div>
+      `).join("");
+    }
+
+    function addChecklist() {
+      const input = document.getElementById("new_task");
+      if (!input.value.trim()) return;
+      currentChecklist.push({ text: input.value.trim(), done: false });
+      input.value = ""; renderChecklistEdit();
+    }
+
+    function toggleTask(i) { currentChecklist[i].done = !currentChecklist[i].done; renderChecklistEdit(); }
+    function removeTask(i) { currentChecklist.splice(i, 1); renderChecklistEdit(); }
+
+    function updateCharts() {
+      if (typeof Chart === 'undefined') return;
+      const revenueByProduct = {}; const countByStatus = {};
+      filteredData.forEach(d => {
+        revenueByProduct[d.product] = (revenueByProduct[d.product] || 0) + (Number(d.price) || 0);
+        countByStatus[d.status] = (countByStatus[d.status] || 0) + 1;
+      });
+
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+      
+      const ctxRev = document.getElementById('revenueChart');
+      if(ctxRev) {
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(ctxRev.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(revenueByProduct).length ? Object.keys(revenueByProduct) : ['Chưa có dữ liệu'],
+            datasets: [{ data: Object.keys(revenueByProduct).length ? Object.values(revenueByProduct) : [1], backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'], borderWidth: 0, hoverOffset: 4 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { title: { display: true, text: '💰 TỶ TRỌNG DOANH THU', color: '#fff', font:{size: 14, weight: 'bold'} }, legend: { position: 'right' } } }
+        });
+      }
+
+      const ctxStat = document.getElementById('statusChart');
+      if(ctxStat) {
+        if (statusChart) statusChart.destroy();
+        statusChart = new Chart(ctxStat.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: Object.keys(countByStatus).length ? Object.keys(countByStatus) : ['Chưa có dữ liệu'],
+            datasets: [{ label: 'Số lượng đơn', data: Object.keys(countByStatus).length ? Object.values(countByStatus) : [0], backgroundColor: '#a855f7', borderRadius: 8 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: '📊 TÌNH TRẠNG ĐƠN HÀNG', color: '#fff', font:{size: 14, weight: 'bold'} }, legend: {display: false} }, scales: { y: { beginAtZero: true, ticks: {stepSize: 1}, grid: { color: 'rgba(255,255,255,0.05)', borderDash: [5, 5] } }, x: { grid: { display: false } } } }
+        });
+      }
+    }
+
+    /* --- ZALO SMART MESSAGING --- */
+    // Hàm hỗ trợ tự động copy nội dung và mở tab Zalo
+    function copyAndOpenZalo(phone, msg) {
+      navigator.clipboard.writeText(msg).then(() => {
+        toast("📋 Đã copy mẫu tin nhắn! Bạn có thể dán (Ctrl+V) vào khung chat Zalo.", "success");
+        window.open(`https://zalo.me/${phone}`, '_blank');
+      }).catch(err => {
+        toast("Lỗi khi copy tin nhắn!", "error");
+        console.error(err);
+      });
+    }
+
+    // Cập nhật lại hàm openZaloDialog
+    function openZaloDialog(id) {
+      let d = data.find(x => x.id === id);
+      if (!d) return;
+      const customerInfo = customers.find(c => c.name === d.name);
+      if (!customerInfo || !customerInfo.phone) return toast("⚠️ Khách hàng này chưa có số điện thoại trong hồ sơ!", "warning");
+      
+      const trackLink = window.location.origin + window.location.pathname + "?track=" + d.code;
+      let price = Number(d.price) || 0;
+      let deposit = Number(d.deposit) || 0;
+      let debt = price - deposit;
+      
+      let msgNormal = `Chào bạn, đơn hàng của bạn đã hoàn thiện. Bạn xem demo thiết kế và tiến độ tại link này nhé: ${trackLink} \nCảm ơn quý khách đã tin tưởng dịch vụ!`;
+      let msgDebt = `Chào bạn, đơn hàng của bạn đã xong. Tổng chi phí là ${price.toLocaleString()}K, bạn đã cọc ${deposit.toLocaleString()}K, phần còn lại là ${debt.toLocaleString()}K. \nBạn xem xác nhận file tại: ${trackLink} \nVà vui lòng thanh toán phần còn lại giúp bên mình nhé. Xin cảm ơn!`;
+      
+      let old = document.getElementById("zaloPopup"); if(old) old.remove();
+      let div = document.createElement("div"); div.id = "zaloPopup";
+      div.style = `position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(15px); padding:24px; border-radius:24px; max-width:400px; width:90%; z-index:999999; border:1px solid rgba(255,255,255,0.1); box-shadow:0 20px 50px rgba(0,0,0,0.6); animation:modalSlideUp 0.3s ease;`;
+      
+      // Mã hóa nội dung để truyền an toàn qua sự kiện onclick
+      const safeNormalMsg = encodeURIComponent(msgNormal);
+      const safeDebtMsg = encodeURIComponent(msgDebt);
+
+      div.innerHTML = `
+        <div style="font-weight:800; margin-bottom:20px; font-size:18px; color:#fff; display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">💬</span> Gửi Zalo Nhanh</div>
+        <button onclick="copyAndOpenZalo('${customerInfo.phone}', decodeURIComponent('${safeNormalMsg}')); this.parentElement.remove()" style="width:100%; margin-bottom:12px; background:rgba(34, 197, 94, 0.2); color:#4ade80; border:1px solid rgba(34, 197, 94, 0.4); box-shadow:none; padding:14px;">✅ Mẫu Thông Báo Bàn Giao</button>
+        ${debt > 0 ? `<button onclick="copyAndOpenZalo('${customerInfo.phone}', decodeURIComponent('${safeDebtMsg}')); this.parentElement.remove()" style="width:100%; margin-bottom:20px; background:var(--primary-grad); color:#fff; box-shadow:0 4px 15px rgba(124,58,237,0.3); padding:14px; border:none;">💰 Mẫu Nhắc Nợ (${debt.toLocaleString()}K)</button>` : ''}
+        <button onclick="this.parentElement.remove()" style="width:100%; background:transparent; border:1px solid rgba(255,255,255,0.1); color:var(--muted); box-shadow:none; padding:14px;">Hủy Bỏ</button>
+      `;
+      document.body.appendChild(div);
+    }
+    
+function openLightbox(url) {
+    const lightbox = document.getElementById('lightbox');
+    const img = document.getElementById('lightboxImg');
+    img.src = url;
+    lightbox.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Khóa cuộn trang khi đang xem ảnh
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Mở lại cuộn trang
+}
+
+let currentRightClickId = null;
+
+window.addEventListener("contextmenu", function(e) {
+    // Tìm phần tử cha gần nhất có chứa ID đơn hàng (tr cho Table hoặc .k-card cho Kanban)
+    const targetRow = e.target.closest("tr[data-id], .k-card");
+    
+    if (targetRow) {
+        e.preventDefault(); // Chặn menu mặc định của trình duyệt
+        
+        // Lấy ID từ data-id (Table) hoặc tìm trong thuộc tính kéo thả (Kanban)
+        currentRightClickId = targetRow.getAttribute("data-id");
+        
+        // Riêng với Kanban, nếu không có data-id, ta có thể lấy từ hàm onclick cũ của bạn
+        if (!currentRightClickId && targetRow.onclick) {
+            const match = targetRow.onclick.toString().match(/'([^']+)'/);
+            if (match) currentRightClickId = match[1];
+        }
+
+        if (!currentRightClickId) return;
+
+        const menu = document.getElementById("contextMenu");
+        menu.style.display = "flex";
+        
+        // Tính toán vị trí menu (tránh tràn màn hình)
+        let posX = e.clientX;
+        let posY = e.clientY;
+        if (posX + 200 > window.innerWidth) posX -= 200;
+        if (posY + 300 > window.innerHeight) posY -= 300;
+
+        menu.style.left = posX + "px";
+        menu.style.top = posY + "px";
+        
+        // Gán sự kiện cho các nút trong menu
+        document.getElementById("cm-edit").onclick = () => { hideCM(); openEdit(currentRightClickId); };
+        document.getElementById("cm-pdf").onclick = () => { hideCM(); exportPDF(currentRightClickId); };
+        document.getElementById("cm-zalo").onclick = () => { hideCM(); openZaloDialog(currentRightClickId); };
+        document.getElementById("cm-history").onclick = () => { hideCM(); viewHistory(currentRightClickId); };
+        document.getElementById("cm-del").onclick = () => { hideCM(); del(currentRightClickId); };
+    } else {
+        hideCM();
+    }
+});
+
+// Ẩn menu khi click ra ngoài
+window.addEventListener("click", function() { hideCM(); });
+
+function hideCM() {
+    const menu = document.getElementById("contextMenu");
+    if(menu) menu.style.display = "none";
+}
+
+  </script>
+  <!-- Context Menu Structure -->
+<div id="contextMenu" class="context-menu">
+    <div class="context-menu-item" id="cm-edit">✏️ Chỉnh sửa đơn</div>
+    <div class="context-menu-item admin-only" id="cm-pdf">📄 Xuất file PDF</div>
+    <div class="context-menu-item" id="cm-zalo">💬 Gửi Zalo khách</div>
+    <div class="context-menu-sep"></div>
+    <div class="context-menu-item" id="cm-history">📜 Lịch sử thao tác</div>
+    <div class="context-menu-item delete admin-only" id="cm-del">🗑️ Xóa đơn hàng</div>
+</div>
+</body>
+</html>
