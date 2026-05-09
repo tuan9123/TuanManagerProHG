@@ -544,7 +544,7 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
       th:nth-child(2), td:nth-child(2) { position: static; left: auto; background: transparent; z-index: auto; box-shadow: none; }
 
       /* 6. KANBAN (Sửa lỗi các cột đâm xuyên vào nhau) */
-      .kanban-view { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 20px; gap: 16px; }
+      .kanban-view { display: flex !important; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 20px; gap: 16px; }
       .k-col { min-width: 85vw; flex-shrink: 0; scroll-snap-align: center; }
 
       /* 7. CALENDAR */
@@ -723,7 +723,7 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
         <button class="chip" onclick="setProductTab('Khác', this)">📦 Khác
           <span class="badge" id="count-khac">0</span><span class="danger" id="overdue-khac" style="display:none;"></span><span class="rate" id="rate-khac">0%</span>
         </button>
-        <button class="chip admin-only" onclick="window.open(window.location.pathname + '#/khach', '_blank')" style="border-color: var(--primary); color: #fff;">👥 Quản Lý Khách Hàng</button>
+        <button class="chip admin-only" onclick="go('/khach') " style="border-color: var(--primary); color: #fff;">👥 Quản Lý Khách Hàng</button>
       </div>
 
       <!-- ĐÃ SỬA: FORM NHẬP NỔI BẬT KHÔNG CÒN KHOẢNG TRỐNG THỪA -->
@@ -927,36 +927,35 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
         </div>
 
         <!-- Cột 2 -->
-       <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);">
-  <div style="font-weight: 800; font-size:14px; margin-bottom: 16px; color: #4ade80; display:flex; align-items:center; gap:8px;">
-    <span style="background:rgba(34, 197, 94, 0.1); padding:4px; border-radius:6px;">⏱</span> Thời Gian & Tài Chính
-  </div>
-  
-  <div style="display:flex; gap:12px; margin-bottom:12px;">
-    <div style="flex:1; min-width: 0;">
-      <label>Ngày Chốt Đơn</label>
-      <input id="e_order" type="date" style="width:100%; max-width: 100%;">
-    </div>
-    <div style="flex:1; min-width: 0;">
-      <label style="color:#fbbf24;">Deadline Hẹn Trả</label>
-      <input id="e_due" type="date" style="width:100%; max-width: 100%; border-color:rgba(245, 158, 11, 0.3);">
-    </div>
-  </div>
-  
-  <label>Ngày Gửi Demo (Dự kiến)</label>
-  <input id="e_demo" type="date" style="width:100%; max-width: 100%; margin-bottom:16px;">
-  
-  <div class="admin-only" style="display:flex; gap:12px; background:rgba(34, 197, 94, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(34, 197, 94, 0.1);">
-    <div style="flex:1; min-width: 0;">
-      <label style="color:#4ade80; margin-top:0;">💰 Báo Giá (K)</label>
-      <input id="e_price" type="number" placeholder="VD: 500" style="width:100%; max-width: 100%; font-weight:700;">
-    </div>
-    <div style="flex:1; min-width: 0;">
-      <label style="color:#fbbf24; margin-top:0;">💵 Khách Cọc (K)</label>
-      <input id="e_deposit" type="number" placeholder="VD: 200" style="width:100%; max-width: 100%; font-weight:700;">
-    </div>
-  </div>
-</div>
+        <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);">
+          <div style="font-weight: 800; font-size:14px; margin-bottom: 16px; color: #4ade80; display:flex; align-items:center; gap:8px;"><span style="background:rgba(34, 197, 94, 0.1); padding:4px; border-radius:6px;">⏱</span> Thời Gian & Tài Chính</div>
+          
+          <div style="display:flex; gap:12px; margin-bottom:12px;">
+            <div style="flex:1">
+              <label>Ngày Chốt Đơn</label>
+              <input id="e_order" type="date" style="width:100%;">
+            </div>
+            <div style="flex:1">
+              <label style="color:#fbbf24;">Deadline Hẹn Trả</label>
+              <input id="e_due" type="date" style="width:100%; border-color:rgba(245, 158, 11, 0.3);">
+            </div>
+          </div>
+          
+          <label>Ngày Gửi Demo (Dự kiến)</label>
+          <input id="e_demo" type="date" style="width:100%; margin-bottom:16px;">
+          
+          <div class="admin-only" style="display:flex; gap:12px; background:rgba(34, 197, 94, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(34, 197, 94, 0.1);">
+            <div style="flex:1">
+              <label style="color:#4ade80; margin-top:0;">💰 Báo Giá (K)</label>
+              <input id="e_price" type="number" placeholder="VD: 500" style="width:100%; font-weight:700;">
+            </div>
+            <div style="flex:1">
+              <label style="color:#fbbf24; margin-top:0;">💵 Khách Cọc (K)</label>
+              <input id="e_deposit" type="number" placeholder="VD: 200" style="width:100%; font-weight:700;">
+            </div>
+          </div>
+        </div>
+      </div>
       
       <div class="full-row" style="margin-top: 5px;">
         <label>📝 Nội dung & Yêu cầu chi tiết</label>
@@ -1257,14 +1256,7 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
 
       // Tắt / Bật Display an toàn
       let tb = document.getElementById('tableView'); if(tb) tb.style.display = mode === 'table' ? 'block' : 'none';
-      let kb = document.getElementById('kanbanView'); 
-if(kb) {
-    if (mode === 'kanban') {
-        kb.style.display = window.innerWidth <= 768 ? 'flex' : 'grid';
-    } else {
-        kb.style.display = 'none';
-    }
-}
+      let kb = document.getElementById('kanbanView'); if(kb) kb.style.display = mode === 'kanban' ? 'grid' : 'none';
       let cal = document.getElementById('calendarView'); if(cal) cal.style.display = mode === 'calendar' ? 'block' : 'none';
       
       safeRender();
