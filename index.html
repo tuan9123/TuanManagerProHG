@@ -15,6 +15,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     /* ========================================= */
     /* BIẾN MÀU SẮC & GIAO DIỆN CAO CẤP          */
     /* ========================================= */
@@ -522,10 +525,14 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
       .toolbar > div, .toolbar select, .toolbar button { width: 100%; margin: 0; box-sizing: border-box; }
       .chip-scroll { flex-direction: row; flex-wrap: nowrap; padding-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-      /* 4. FORM NHẬP LIỆU (Sửa lỗi Label đè vào Input) */
-      .form { padding: 16px; border-radius: 16px; gap: 16px; }
-      .form-row { flex-direction: column; gap: 12px; margin-top: 0 !important; }
-      .form-col, .form-col.wide { width: 100%; flex: none; display: flex; flex-direction: column; }
+      /* 4. FORM NHẬP LIỆU (Sửa lỗi Label đè vào Input & Tràn viền) */
+      .form { padding: 16px !important; border-radius: 16px !important; gap: 12px !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow: hidden; }
+      .form-row { flex-direction: column !important; gap: 12px !important; margin: 0 !important; width: 100% !important; }
+      .form-col, .form-col.wide { width: 100% !important; min-width: 100% !important; flex: none !important; display: flex; flex-direction: column; box-sizing: border-box !important; }
+      .form-col label { position: relative !important; top: 0 !important; left: 0 !important; background: transparent !important; margin-bottom: 6px !important; font-size: 12px !important; padding: 0 !important; display: inline-block !important; }
+      .form-row input, .form-row select, .form-row textarea { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+      .form-col > div { display: flex !important; flex-direction: column !important; width: 100% !important; gap: 8px !important; }
+      .form-row button { width: 100% !important; margin-top: 4px !important; box-sizing: border-box !important; }
       
       /* Trả Label về vị trí tĩnh, bỏ absolute để không lồng chữ */
       .form-col label { position: relative !important; top: 0 !important; left: 0 !important; background: transparent !important; margin-bottom: 6px; font-size: 12px; padding: 0 !important; }
@@ -550,11 +557,10 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
       .cal-grid { min-width: 600px; }
 
       /* 8. MODAL & POPUP (Căn lề không bị tràn viền đt) */
-      .modal-content { width: calc(100% - 24px); margin: 0 auto; padding: 16px; border-radius: 16px; max-height: 85vh; box-sizing: border-box;}
-      .grid2 { grid-template-columns: 1fr; gap: 16px; }
-      .lock-container { width: 90%; max-width: 320px; padding: 24px; border-radius: 24px; }
-      .pin-field { font-size: 28px; max-width: 180px; letter-spacing: 12px; }
-      .toast { min-width: auto; width: 90%; right: 5%; left: 5%; top: 16px; }
+      .modal-content { width: 94% !important; max-width: 94% !important; margin: 10px auto !important; padding: 16px !important; border-radius: 16px !important; max-height: 90vh !important; overflow-y: auto !important; overflow-x: hidden !important; box-sizing: border-box !important; }
+      .grid2 { grid-template-columns: 1fr !important; gap: 12px !important; width: 100% !important; }
+      .modal-content input, .modal-content select, .modal-content textarea { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+      .modal-content .grid2 > div { width: 100% !important; padding: 10px !important; box-sizing: border-box !important; }
 
       /* 9. NÚT NỔI & KHÁC */
       .logout-circle { top: 12px; left: 12px; width: 40px; height: 40px; font-size: 16px; }
@@ -2206,7 +2212,7 @@ function exportPDF(id) {
         const allCust = await customerCol.get(); const batch = db.batch(); let count = 0;
         allCust.docs.forEach(doc => { if (!doc.data().code) { batch.update(customerCol.doc(doc.id), { code: generateCustomerCode() }); count++; } });
         if (count > 0) await batch.commit();
-        toast("✅ Đã đồng bộ khách hàng và bảo toàn mã!", "success");
+        toast("Đã đồng bộ khách hàng và bảo toàn mã!", "success");
       } catch (error) { toast("Lỗi hệ thống khi đồng bộ!", "error"); }
     }
 
