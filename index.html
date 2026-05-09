@@ -544,7 +544,19 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
       th:nth-child(2), td:nth-child(2) { position: static; left: auto; background: transparent; z-index: auto; box-shadow: none; }
 
       /* 6. KANBAN (Sửa lỗi các cột đâm xuyên vào nhau) */
-      .kanban-view { display: flex !important; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 20px; gap: 16px; }
+.kanban-view { 
+  /* Bỏ display: flex !important ở đây để Javascript có thể ẩn/hiện theo tab */
+  flex-wrap: nowrap; 
+  overflow-x: auto; 
+  scroll-snap-type: x mandatory; 
+  padding-bottom: 20px; 
+  gap: 16px; 
+}
+
+/* Chỉ khi nào tab Kanban được chọn (JS đặt display: grid), ta mới ép nó sang flex để cuộn ngang trên mobile */
+#kanbanView:not([style*="display: none"]) {
+  display: flex !important;
+}
       .k-col { min-width: 85vw; flex-shrink: 0; scroll-snap-align: center; }
 
       /* 7. CALENDAR */
@@ -641,6 +653,17 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
     table th:last-child, .action-cell {
         display: none !important;
     }
+}
+/* Ép các ô input không bao giờ vượt quá chiều rộng hàng cha */
+.grid2 input, .grid2 select {
+  max-width: 100%;
+  min-width: 0; /* Quan trọng: Cho phép flex-child thu nhỏ hơn kích thước nội dung */
+}
+
+/* Tối ưu riêng cho ô Date để không bị phình trên màn hình nhỏ/laptop */
+input[type="date"] {
+  min-width: 0;
+  width: 100%;
 }
   </style>
 </head>
@@ -930,16 +953,13 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
         <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.03);">
           <div style="font-weight: 800; font-size:14px; margin-bottom: 16px; color: #4ade80; display:flex; align-items:center; gap:8px;"><span style="background:rgba(34, 197, 94, 0.1); padding:4px; border-radius:6px;">⏱</span> Thời Gian & Tài Chính</div>
           
-          <div style="display:flex; gap:12px; margin-bottom:12px;">
-            <div style="flex:1">
-              <label>Ngày Chốt Đơn</label>
-              <input id="e_order" type="date" style="width:100%;">
-            </div>
-            <div style="flex:1">
-              <label style="color:#fbbf24;">Deadline Hẹn Trả</label>
-              <input id="e_due" type="date" style="width:100%; border-color:rgba(245, 158, 11, 0.3);">
-            </div>
-          </div>
+          <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap: wrap;"> <div style="flex:1; min-width: 140px;"> <label>Ngày Chốt Đơn</label>
+    <input id="e_order" type="date" style="width:100%; box-sizing: border-box;">
+  </div>
+  <div style="flex:1; min-width: 140px;"> <label style="color:#fbbf24;">Deadline Hẹn Trả</label>
+    <input id="e_due" type="date" style="width:100%; box-sizing: border-box; border-color:rgba(245, 158, 11, 0.3);">
+  </div>
+</div>
           
           <label>Ngày Gửi Demo (Dự kiến)</label>
           <input id="e_demo" type="date" style="width:100%; margin-bottom:16px;">
