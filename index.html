@@ -544,7 +544,7 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
       th:nth-child(2), td:nth-child(2) { position: static; left: auto; background: transparent; z-index: auto; box-shadow: none; }
 
       /* 6. KANBAN (Sửa lỗi các cột đâm xuyên vào nhau) */
-      .kanban-view { display: flex !important; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 20px; gap: 16px; }
+      .kanban-view { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 20px; gap: 16px; }
       .k-col { min-width: 85vw; flex-shrink: 0; scroll-snap-align: center; }
 
       /* 7. CALENDAR */
@@ -1256,7 +1256,14 @@ tr.delivered td:first-child { border-left: 5px solid #22c55e !important; } /* Đ
 
       // Tắt / Bật Display an toàn
       let tb = document.getElementById('tableView'); if(tb) tb.style.display = mode === 'table' ? 'block' : 'none';
-      let kb = document.getElementById('kanbanView'); if(kb) kb.style.display = mode === 'kanban' ? 'grid' : 'none';
+      let kb = document.getElementById('kanbanView'); 
+if(kb) {
+    if (mode === 'kanban') {
+        kb.style.display = window.innerWidth <= 768 ? 'flex' : 'grid';
+    } else {
+        kb.style.display = 'none';
+    }
+}
       let cal = document.getElementById('calendarView'); if(cal) cal.style.display = mode === 'calendar' ? 'block' : 'none';
       
       safeRender();
